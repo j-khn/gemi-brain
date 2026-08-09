@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+httpx
+pydantic
+python-dotenv
+pytest
+pytest-asyncio
+face_recognition
+numpy
+pillow
