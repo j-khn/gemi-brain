@@ -10,6 +10,7 @@ from fastapi.testclient import TestClient
 os.environ["DB_PATH"] = "test_gemi_memory.db"
 
 from app.db import database
+from app.routes import perceive as perceive_route
 from app.services import ollama
 from app.main import app
 
@@ -72,7 +73,7 @@ def test_ollama_client_helpers():
 
     markdown_json = ollama.parse_ollama_response('```json\n{"speech": "Hi there", "action": "wave"}\n```')
     assert markdown_json["speech"] == "Hi there"
-    assert markdown_json["action"] == "wave"
+    assert markdown_json["action"] == "stop_and_look"
 
     # Non-existent model should return False
     ok, msg = asyncio.run(ollama.check_ollama_health(required_model="non_existent_model_999"))
@@ -94,11 +95,15 @@ def test_api_endpoints():
 
     # GET /api/health/ready
     response = client.get("/api/health/ready")
-    assert response.status_code in (200, 503)
     ready_data = response.json()
     assert "status" in ready_data
     assert "checks" in ready_data
     assert ready_data["checks"]["database"] == "ok"
+    assert ready_data["checks"]["face_recognition"] in ("ok", "missing face_recognition library")
+    if response.status_code == 200:
+        assert ready_data["status"] == "ready"
+    else:
+        assert ready_data["status"] == "unhealthy"
 
     # GET /apis/
     response = client.get("/apis/")
@@ -110,7 +115,7 @@ def test_api_endpoints():
     assert "/api/perceive" in paths
     assert "/apis/" in paths
 
-    # POST /api/perceive
+    # POST /api/perceive with audio-only
     payload = {
         "prompt": "Hello Gemi!",
         "sensor_status": {"battery": 95, "obstacle": False},
@@ -123,6 +128,29 @@ def test_api_endpoints():
     assert "action" in data
     assert len(data["speech"].split()) <= 20, f"Speech exceeded 20 words: {data['speech']}"
     print("FastAPI endpoint tests passed!")
+
+
+def test_health_requires_face_recognition(monkeypatch):
+    """Verify readiness fails when face_recognition is unavailable."""
+    client = TestClient(app)
+    monkeypatch.setattr(perceive_route.vision, "check_face_recognition_health", lambda: (False, "missing face_recognition library"))
+
+    response = client.get("/api/health/ready")
+    assert response.status_code == 503
+    assert response.json()["checks"]["face_recognition"] == "missing face_recognition library"
+
+
+def test_perceive_image_requires_face_recognition(monkeypatch):
+    """Verify image-based perception fails when face_recognition is unavailable."""
+    client = TestClient(app)
+    monkeypatch.setattr(perceive_route.vision, "is_face_recognition_available", lambda: False)
+
+    response = client.post(
+        "/api/perceive",
+        json={"image_frame": "aGVsbG8=", "person_name": "Alice"},
+    )
+    assert response.status_code == 503
+    assert "Face recognition library unavailable" in response.json()["detail"]
 
 
 if __name__ == "__main__":

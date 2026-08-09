@@ -6,8 +6,8 @@
 
 ## ✨ Features
 
-- 🎙️ **Audio + Vision perception** — accepts text prompts and optional base64 camera frames
-- 👤 **Multi-vector face recognition** — identifies people using stored face embeddings (dlib-based, optional)
+- 🎙️ **Audio + Vision perception** — accepts text prompts and base64 camera frames
+- 👤 **Multi-vector face recognition** — identifies people using stored face embeddings (dlib-based, required for visual input)
 - 🧠 **Persistent memory** — stores people, preferences, and interaction logs in SQLite
 - 🐾 **Pet robot persona** — Gemi responds like a playful pet, not a corporate assistant
 - 🌍 **Multilingual** — English, Urdu, and German
@@ -30,7 +30,7 @@ gemi-brain/
 │   │   └── database.py      # SQLite connection, init, migrations, helpers
 │   └── services/
 │       ├── ollama.py         # Ollama AI client (system prompt, parsing)
-│       └── vision.py         # Face recognition utilities (optional)
+│       └── vision.py         # Face recognition utilities (required for image mode)
 ├── tests/
 │   └── test_main.py         # Integration tests
 ├── run.py                   # Entry point
@@ -46,7 +46,16 @@ gemi-brain/
 
 - Python 3.11+
 - [Ollama](https://ollama.com/) running locally with the `openbmb/minicpm-o2.6` model
-- *(Optional)* CMake + libpng for face recognition: `brew install cmake libpng`
+- *(Required for image mode)* CMake, pkg-config, and libpng for face recognition
+  - macOS example:
+    ```bash
+    brew install cmake pkg-config libpng
+    ```
+  - Then install Python packages into the venv:
+    ```bash
+    source venv/bin/activate
+    pip install -r requirements.txt
+    ```
 
 ### 2. Install dependencies
 
@@ -74,7 +83,7 @@ Interactive docs: `http://localhost:8000/docs`
 | Method | Path | Description |
 |--------|------|-------------|
 | `GET` | `/api/health` | Liveness check — returns `{"status": "online"}` |
-| `GET` | `/api/health/ready` | Readiness check — verifies DB + Ollama + face recognition |
+| `GET` | `/api/health/ready` | Readiness check — verifies DB + Ollama (face recognition required for image mode) |
 | `GET` | `/apis/` | Lists all registered API endpoints |
 | `POST` | `/api/perceive` | Core perception endpoint (see below) |
 
@@ -108,7 +117,7 @@ All fields are optional. If `image_frame` is omitted, Gemi operates in **audio-o
 
 ## 🧠 Face Recognition
 
-Face recognition is **optional** — the server runs normally without it.
+Face recognition is **required for image mode**. If the library is not installed, `/api/health/ready` reports `unhealthy`, and `POST /api/perceive` with `image_frame` returns `503`.
 
 When enabled:
 - Embeddings are stored as JSON arrays (`[[float,...], ...]`) in SQLite — one array per person, up to **10 angles/lighting profiles**

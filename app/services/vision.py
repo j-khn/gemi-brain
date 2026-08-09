@@ -15,24 +15,35 @@ import numpy as np
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
-# Optional import — dlib/face_recognition may not be compiled on all systems
+# Lazy import — dlib/face_recognition may not be installed until required.
 # ---------------------------------------------------------------------------
 try:
     import face_recognition as _face_recognition  # noqa: F401
     _FACE_RECOGNITION_AVAILABLE = True
-except ImportError:
+except Exception as exc:
     _face_recognition = None  # type: ignore
     _FACE_RECOGNITION_AVAILABLE = False
     logger.warning(
-        "face_recognition module not available. "
+        "face_recognition module not available (%s). "
         "Face recognition features will be disabled. "
-        "Run: pip install face_recognition  (requires dlib / cmake)"
+        "Run: brew install cmake libpng && pip install face_recognition",
+        exc,
     )
 
 
 def is_face_recognition_available() -> bool:
     """Return True if face_recognition is installed and importable."""
     return _FACE_RECOGNITION_AVAILABLE
+
+
+def check_face_recognition_health() -> tuple[bool, str]:
+    """Report face recognition status for readiness checks.
+
+    Face recognition is required for visual mode and must be installed.
+    """
+    if _FACE_RECOGNITION_AVAILABLE:
+        return True, "ok"
+    return False, "missing face_recognition library"
 
 
 def decode_image_base64(image_str: str) -> bytes:

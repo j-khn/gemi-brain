@@ -41,6 +41,16 @@ def init_db() -> None:
                 event_summary TEXT
             );
         """)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS conversations (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                person_id INTEGER,
+                user_prompt TEXT,
+                gemi_response TEXT,
+                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (person_id) REFERENCES people(id)
+            );
+        """)
         conn.commit()
 
         # --- Schema migrations (safe to run on every startup) ---
@@ -90,6 +100,96 @@ def save_interaction_log(event_summary: str) -> int:
         )
         conn.commit()
         return cursor.lastrowid
+
+
+def save_conversation_turn(person_id: Optional[int], user_prompt: str, gemi_response: str) -> int:
+    """Save one conversation turn into the conversations table."""
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute(
+            "INSERT INTO conversations (person_id, user_prompt, gemi_response) VALUES (?, ?, ?)",
+            (person_id, user_prompt, gemi_response),
+        )
+        conn.commit()
+        return cursor.lastrowid
+
+
+def get_conversation_history(person_id: int, limit: int = 10):
+    """Return the last conversation turns for a person, newest last."""
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT user_prompt, gemi_response, timestamp FROM conversations WHERE person_id = ? ORDER BY timestamp DESC LIMIT ?",
+            (person_id, limit),
+        )
+        rows = cursor.fetchall()
+        history = []
+        for row in reversed(rows):
+            history.append({
+                "user_prompt": row["user_prompt"],
+                "gemi_response": row["gemi_response"],
+                "timestamp": row["timestamp"],
+            })
+        return history
+
+
+def get_recent_conversation_history(limit: int = 10, minutes: int = 10):
+    """Return recent conversation turns across all persons within the last timeframe."""
+    if minutes <= 0:
+        minutes = 10
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT user_prompt, gemi_response, timestamp FROM conversations "
+            "WHERE timestamp >= datetime('now', ? ) ORDER BY timestamp DESC LIMIT ?",
+            (f'-{minutes} minutes', limit),
+        )
+        rows = cursor.fetchall()
+        history = []
+        for row in reversed(rows):
+            history.append({
+                "user_prompt": row["user_prompt"],
+                "gemi_response": row["gemi_response"],
+                "timestamp": row["timestamp"],
+            })
+        return history
+
+
+def get_conversation_history_by_query(query: str, limit: int = 10):
+    """Return conversation turns that mention query terms in user or gemi text."""
+    if not query or not query.strip():
+        return []
+    search = f"%{query.strip()}%"
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT user_prompt, gemi_response, timestamp FROM conversations "
+            "WHERE user_prompt LIKE ? OR gemi_response LIKE ? ORDER BY timestamp DESC LIMIT ?",
+            (search, search, limit),
+        )
+        rows = cursor.fetchall()
+        history = []
+        for row in reversed(rows):
+            history.append({
+                "user_prompt": row["user_prompt"],
+                "gemi_response": row["gemi_response"],
+                "timestamp": row["timestamp"],
+            })
+        return history
+
+
+def get_person_id_by_name(person_name: str) -> Optional[int]:
+    """Return the person ID for a name if it exists."""
+    if not person_name or not person_name.strip():
+        return None
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT id FROM people WHERE LOWER(name) = LOWER(?)",
+            (person_name.strip(),),
+        )
+        row = cursor.fetchone()
+        return row["id"] if row else None
 
 
 def check_db_health() -> tuple[bool, str]:

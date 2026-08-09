@@ -42,16 +42,15 @@ async def readiness_check():
     db_ok, db_msg = database.check_db_health()
     ollama_ok, ollama_msg = await ollama.check_ollama_health()
 
+    _, face_msg = vision.check_face_recognition_health()
+
     checks = {
         "database": db_msg,
         "ollama": ollama_msg,
-        "face_recognition": (
-            "available" if vision.is_face_recognition_available()
-            else "unavailable (dlib not compiled)"
-        ),
+        "face_recognition": face_msg,
     }
 
-    if db_ok and ollama_ok:
+    if db_ok and ollama_ok and checks["face_recognition"] == "ok":
         return JSONResponse(
             status_code=status.HTTP_200_OK,
             content={"status": "ready", "checks": checks}

@@ -1,3 +1,7 @@
+# Python package requirements for the Gemi Brain project.
+# Note: face_recognition requires native build tools and libraries on macOS.
+# Install prerequisites before running `pip install -r requirements.txt`.
+# Example (macOS): brew install cmake pkg-config libpng
 fastapi
 uvicorn
 httpx

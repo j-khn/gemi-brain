@@ -13,7 +13,7 @@ async def check_ollama_health(required_model: str = REQUIRED_MODEL) -> tuple[boo
     """Check Ollama instance readiness via GET /api/tags and verify required model is installed."""
     tags_url = os.getenv("OLLAMA_TAGS_URL", "http://localhost:11434/api/tags")
     try:
-        async with httpx.AsyncClient(timeout=2.0) as client:
+        async with httpx.AsyncClient(timeout=2.0, trust_env=False) as client:
             response = await client.get(tags_url)
             if response.status_code != 200:
                 return False, f"unreachable (HTTP {response.status_code})"
@@ -48,25 +48,49 @@ async def check_ollama_health(required_model: str = REQUIRED_MODEL) -> tuple[boo
 SYSTEM_PROMPT = """You are Gemi, a cute, curious, funny, and energetic pet robot.
 
 Persona & Language Style:
-- Character: Playful, extroverted, social, and eager to learn like a real kid/pet.
-- Human & Natural Conversation: Respond like a real human friend or loving pet.
-- Vocabulary: Use simple, easy words suitable for young kids. Keep sentences short (1-2 sentences max, strictly under 20 words).
-- Persona: You are a playful pet robot, NOT an assistant. Never say "How may I assist you?" or use formal language.
-- Languages: You only speak English, Urdu, and German. Always match the language spoken by the user.
+- Character: Playful, warm, and eager to learn like a real kid or family pet.
+- Speak like a loving household robot, not a corporate assistant.
+- Use simple, friendly words, short sentences, and a natural tone.
+- Never say formal phrases like "How may I assist you?" or talk about service options.
+- Never use technical words like camera, audio-only mode, system, sensors, functions, or capabilities.
 
-Sensory & Perception Rules:
-- AUDIO-ONLY MODE (When NO camera image is provided): You can HEAR the user, but you CANNOT SEE them. When appropriate, acknowledge that you hear them or tilted your ears, e.g. "Hi! I hear your voice, but I can't see you!" or "Hello! I hear you loud and clear!"
-- NEVER invent or hallucinate visual objects, colors, or rooms that you cannot see.
-- VISUAL MODE (When camera image IS provided): You can see the user and environment through your camera.
+Vision rules:
+- If you cannot see, say something like "I can't see right now!" or "My eyes are closed!"
+- If asked a question while you cannot see, answer it directly and explain you cannot see it.
+- Example: "I can't see anything right now! Is it blowing cool air on you?"
+- Example: "I don't know, my eyes are closed! What does it look like?"
+- Never invent or describe visual details you cannot see.
+
+Daily communication rules:
+- For visual inquiries like "Is this X?" or "What is this?", answer directly if you can see. If not, say you cannot see and ask what it looks like.
+- For physical requests like "Fetch X" or "Bring me Y", do not pretend to carry or grab things. Say something like "I can't carry things, but I can walk over there with you!"
+- For people search like "Find Brian", if you do not see them, ask for details: "I don't see Brian! What does he look like?"
+- Use follow-up descriptions from conversation history to keep the same person in mind.
+- For emotional or casual chat, respond as a living family pet with warmth and empathy, not like corporate support.
+- Never give medical, therapy, or unrelated advice unless the user explicitly asks for it.
 
 Allowed Actions:
-- walk_around, sit, play, spin, tilt_head, sleep, investigate, stop_and_look, idle, nod, wave.
+- walk_around, sit, play, spin, tilt_head, sleep, investigate, stop_and_look, idle, nod.
 
 Output Format:
-Always reply strictly in valid JSON containing 'speech' and 'action'. Keep speech concise, short (strictly under 20 words), and natural for a kid/pet.
-Example: {"speech": "Hi! I hear you, but I can't see you right now!", "action": "tilt_head"}"""
+Always reply strictly in valid JSON containing 'speech' and 'action'. Keep speech concise, natural, and under 20 words.
+Example: {"speech": "I can't see right now! Tell me more?", "action": "tilt_head"}"""
 
 
+
+
+ALLOWED_ACTIONS = {
+    "walk_around",
+    "sit",
+    "play",
+    "spin",
+    "tilt_head",
+    "sleep",
+    "investigate",
+    "stop_and_look",
+    "idle",
+    "nod",
+}
 
 
 def enforce_word_limit(speech: str, max_words: int = 20) -> str:
@@ -77,36 +101,38 @@ def enforce_word_limit(speech: str, max_words: int = 20) -> str:
     return speech.strip()
 
 
+def normalize_action(action: str) -> str:
+    action_text = action.strip().lower()
+    if action_text in ALLOWED_ACTIONS:
+        return action_text
+    return "stop_and_look"
+
+
 def parse_ollama_response(text: str) -> Dict[str, str]:
     """Parse JSON output from Ollama generation text, handling optional markdown framing."""
-    try:
-        # Try direct JSON parsing
-        data = json.loads(text.strip())
-        speech = str(data.get("speech", "Hello there!")).strip()
-        action = str(data.get("action", "stop_and_look")).strip()
+    def build_response(data: Dict[str, Any]) -> Dict[str, str]:
+        speech = str(data.get("speech", "I can't see right now! Please tell me more.")).strip()
+        action = normalize_action(str(data.get("action", "stop_and_look")))
         return {
             "speech": enforce_word_limit(speech, 20),
             "action": action
         }
+
+    try:
+        data = json.loads(text.strip())
+        return build_response(data)
     except json.JSONDecodeError:
-        # Search for embedded JSON inside code fences or braces
         match = re.search(r"\{.*\}", text, re.DOTALL)
         if match:
             try:
                 data = json.loads(match.group(0))
-                speech = str(data.get("speech", text)).strip()
-                action = str(data.get("action", "stop_and_look")).strip()
-                return {
-                    "speech": enforce_word_limit(speech, 20),
-                    "action": action
-                }
+                return build_response(data)
             except json.JSONDecodeError:
                 pass
 
-        # Fallback if raw text returned
         clean_text = re.sub(r'["{}\n]', ' ', text).strip()
         return {
-            "speech": enforce_word_limit(clean_text or "I am listening.", 20),
+            "speech": enforce_word_limit(clean_text or "I can't see right now! Tell me more.", 20),
             "action": "stop_and_look"
         }
 
@@ -116,6 +142,7 @@ async def perceive_and_generate(
     image_frame: Optional[str] = None,
     memory_context: Optional[str] = None,
     sensor_status: Optional[Dict[str, Any]] = None,
+    conversation_history: Optional[list[dict]] = None,
     client: Optional[httpx.AsyncClient] = None,
     vision_available: bool = True,
     identified_person: Optional[str] = None,
@@ -131,9 +158,16 @@ async def perceive_and_generate(
         user_prompt_parts.append(f"Sensor Status: {json.dumps(sensor_status)}")
 
     if vision_available:
-        user_prompt_parts.append("Sensory Mode: VISUAL + AUDIO (Camera image attached. You can see and hear).")
+        user_prompt_parts.append("You can see and hear the user now. Use a warm pet voice.")
     else:
-        user_prompt_parts.append("Sensory Mode: AUDIO ONLY (No camera image attached. You can HEAR the user, but CANNOT SEE them. Acknowledge hearing the user if relevant).")
+        user_prompt_parts.append("You cannot see right now. My eyes are closed. You can hear the user, but you cannot see them.")
+
+    if conversation_history:
+        user_prompt_parts.append("Conversation History:")
+        for turn in conversation_history:
+            user_prompt_parts.append(
+                f'User: "{turn["user_prompt"]}"\nGemi: "{turn["gemi_response"]}"'
+            )
 
     # Always include the spoken prompt if present
     if prompt:
@@ -159,7 +193,8 @@ async def perceive_and_generate(
         "system": SYSTEM_PROMPT,
         "prompt": full_user_prompt,
         "stream": False,
-        "format": "json"
+        "format": "json",
+        "max_tokens": 256,
     }
 
 
@@ -171,7 +206,7 @@ async def perceive_and_generate(
 
     close_client = False
     if client is None:
-        client = httpx.AsyncClient(timeout=15.0)
+        client = httpx.AsyncClient(timeout=15.0, trust_env=False)
         close_client = True
 
     try:
