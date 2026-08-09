@@ -1,0 +1,14 @@
+# Local SQLite database files
+
+gemi_memory.db
+test_gemi_memory.db
+
+# Python virtual environment
+venv/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
