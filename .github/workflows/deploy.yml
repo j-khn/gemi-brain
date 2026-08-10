@@ -6,7 +6,7 @@ on:
       - CI
     types:
       - completed
-  workflow_dispatch:
+  workflow_dispatch: # manual run available from the Actions page
 
 jobs:
   deploy:
