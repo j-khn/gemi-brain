@@ -37,9 +37,9 @@ jobs:
 
       - name: Configure environment
         run: |
-          echo "HOST=${{ secrets.APP_HOST }}" > .env
-          echo "PORT=${{ secrets.APP_PORT }}" >> .env
-          echo "OLLAMA_URL=${{ secrets.OLLAMA_URL }}" >> .env
+          echo "HOST=${{ vars.APP_HOST }}" > .env
+          echo "PORT=${{ vars.APP_PORT }}" >> .env
+          echo "OLLAMA_URL=${{ vars.OLLAMA_URL }}" >> .env
           echo "APP_ENV=production" >> .env
 
       - name: Restart Gemi Brain server
