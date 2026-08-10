@@ -1,6 +1,6 @@
 """Perceive route: POST /api/perceive."""
 
-from typing import Optional
+from typing import Optional, List, Dict
 from fastapi import APIRouter, HTTPException
 
 from app.db.database import (
@@ -13,6 +13,9 @@ from app.db.database import (
     get_person_id_by_name,
     save_conversation_turn,
     save_interaction_log,
+    get_setting,
+    get_all_settings,
+    set_setting,
 )
 from app.services import ollama, vision
 from app.schemas.perceive import PerceiveRequest, PerceiveResponse
@@ -30,60 +33,126 @@ async def perceive(request: PerceiveRequest):
     """
     try:
         # ------------------------------------------------------------------
-        # 1. Vision: decode image and identify person (face recognition is required for image input)
+        # 1. Vision: decode image frames and identify all unique people seen
         # ------------------------------------------------------------------
-        identified_person: Optional[str] = None
+        identified_people: Dict[int, Dict] = {}  # person_id -> {name, best_cos, best_euc}
+        unknown_faces_count = 0
         face_detected = False
-        vision_available = bool(request.image_frame)
+        # vision_available is True if any frame provided
+        vision_available = bool(request.image_frame or request.image_frames)
 
-        if request.image_frame:
+        frames: List[str] = []
+        if request.image_frames:
+            frames = request.image_frames
+        elif request.image_frame:
+            frames = [request.image_frame]
+
+        # Enforce an image sequence limit configured at runtime
+        image_limit = int(get_setting("image_sequence_limit", 6))
+        if frames and len(frames) > image_limit:
+            raise HTTPException(status_code=400, detail=f"Too many image frames; limit is {image_limit}.")
+
+        if frames:
             if not vision.is_face_recognition_available():
                 raise HTTPException(
                     status_code=503,
                     detail="Face recognition library unavailable. Install face_recognition to use image-based perception."
                 )
 
-            image_bytes = vision.decode_image_base64(request.image_frame)
-            query_emb = vision.extract_face_embedding(image_bytes)
-            face_detected = True
             stored_embeddings = get_all_face_embeddings()
-            match = vision.match_face(query_emb, stored_embeddings)
-            if match:
-                person_id, name, cos_sim, euc_dist = match
-                if cos_sim > 0.85 or euc_dist < 0.42:
-                    identified_person = name
-                    if euc_dist > 0.2:
-                        add_face_embedding(person_id, query_emb)
+            # Iterate over all provided frames and attempt to find faces
+            for img_str in frames:
+                try:
+                    image_bytes = vision.decode_image_base64(img_str)
+                    query_emb = vision.extract_face_embedding(image_bytes)
+                except ValueError:
+                    # no face detected in this frame — skip
+                    continue
+                except RuntimeError:
+                    raise HTTPException(
+                        status_code=503,
+                        detail="Face recognition library unavailable at runtime."
+                    )
+
+                face_detected = True
+                match = vision.match_face(query_emb, stored_embeddings)
+                if match:
+                    person_id, name, cos_sim, euc_dist = match
+                    existing = identified_people.get(person_id)
+                    if not existing or cos_sim > existing.get("best_cos", -1):
+                        identified_people[person_id] = {
+                            "name": name,
+                            "best_cos": cos_sim,
+                            "best_euc": euc_dist,
+                            "last_embedding": query_emb,
+                        }
+                        # If this is a reasonably close match, consider adding embedding to refine storage
+                        # thresholds respect runtime settings if present
+                        cos_thresh = float(get_setting("face_cosine_threshold", 0.85))
+                        euc_thresh = float(get_setting("face_euclid_threshold", 0.42))
+                        euc_add = float(get_setting("face_euclid_add_threshold", 0.2))
+                        if (cos_sim > cos_thresh or euc_dist < euc_thresh) and euc_dist > euc_add:
+                            add_face_embedding(person_id, query_emb)
+                else:
+                    unknown_faces_count += 1
             
         # ------------------------------------------------------------------
-        # 2. Detect identity mismatch and resolve effective person name
+        # 2. Resolve claimed names, build aggregated memory context and conversation history
         # ------------------------------------------------------------------
         identity_mismatch = False
         claimed_name: Optional[str] = request.person_name
 
-        if identified_person:
-            effective_name = identified_person
-            if claimed_name and claimed_name.lower() != identified_person.lower():
+        visible_people_names: List[str] = []
+        visible_people_descr: List[str] = []
+        person_ids: List[int] = []
+
+        # Collect recognized people
+        for pid, info in identified_people.items():
+            name = info["name"]
+            visible_people_names.append(name)
+            person_ids.append(pid)
+            # include short notes/role from DB to make descriptions useful
+            # fetch person record notes via get_person_context
+            ctxt = get_person_context(name)
+            if ctxt:
+                visible_people_descr.append(f"{name} ({ctxt})")
+            else:
+                visible_people_descr.append(name)
+
+        # If there were unknown faces, add a generic placeholder
+        if unknown_faces_count > 0:
+            visible_people_names.append("Unknown")
+            visible_people_descr.append("Unknown person")
+
+        # Resolve effective person for single-person flows and identity mismatch logic
+        effective_name = None
+        if len(visible_people_names) == 1:
+            identified_name = visible_people_names[0]
+            if identified_name != "Unknown":
+                effective_name = identified_name
+                if claimed_name and claimed_name.lower() != identified_name.lower():
+                    identity_mismatch = True
+            else:
+                # unknown face but claimed name exists
+                if claimed_name:
+                    identity_mismatch = True
+        else:
+            # multiple people: ignore claimed_name for now, but note mismatch if single claim present
+            if claimed_name and claimed_name not in visible_people_names:
                 identity_mismatch = True
-        elif face_detected and claimed_name:
-            effective_name = None
-            identity_mismatch = True
-        elif claimed_name:
-            effective_name = claimed_name
-        else:
-            effective_name = None
 
-        memory_context = get_person_context(effective_name)
-        person_id = None
-        if identified_person:
-            person_id = get_person_id_by_name(identified_person)
-        elif effective_name:
-            person_id = get_person_id_by_name(effective_name)
-
-        if person_id:
-            conversation_history = get_conversation_history(person_id, limit=10)
+        # Build aggregated memory context for all identified people
+        if visible_people_names:
+            memory_context = get_person_contexts(visible_people_names)
         else:
-            # No identified person: use recent interactions from the past 10 minutes
+            memory_context = ""
+
+        # Conversation history: aggregate histories for visible people if available, else fall back to recent
+        conversation_history = []
+        if person_ids:
+            for pid in person_ids:
+                conversation_history.extend(get_conversation_history(pid, limit=5))
+        if not conversation_history:
             conversation_history = get_recent_conversation_history(limit=10, minutes=10)
             if request.prompt:
                 query_history = get_conversation_history_by_query(request.prompt, limit=10)
@@ -95,29 +164,32 @@ async def perceive(request: PerceiveRequest):
         # ------------------------------------------------------------------
         enriched_prompt = request.prompt or ""
         if identity_mismatch:
-            if identified_person:
+            if visible_people_names and len(visible_people_names) == 1 and visible_people_names[0] != "Unknown":
                 enriched_prompt = (
                     f"{enriched_prompt} "
-                    f"[SYSTEM NOTE: User claims to be '{claimed_name}' but face recognition "
-                    f"identified them as '{identified_person}'. Politely challenge/verify their identity.]"
+                    f"[NOTE: User claims to be '{claimed_name}' but face recognition identified them as '{visible_people_names[0]}'. Politely verify their identity.]"
                 ).strip()
             else:
                 enriched_prompt = (
                     f"{enriched_prompt} "
-                    f"[SYSTEM NOTE: User claims to be '{claimed_name}', but the face could not be matched to that identity. Politely verify their name.]"
+                    f"[NOTE: Claimed name '{claimed_name}' does not match visible people. Politely verify names.]"
                 ).strip()
 
         # ------------------------------------------------------------------
         # 4. Query Ollama model
         # ------------------------------------------------------------------
+        # Prepare visible people text for Ollama (e.g. "Jam (father), Alice (daughter)")
+        visible_desc = ", ".join(visible_people_descr) if visible_people_descr else ""
+
         result = await ollama.perceive_and_generate(
             prompt=enriched_prompt or request.prompt,
-            image_frame=request.image_frame,
+            image_frames=frames or None,
             memory_context=memory_context,
             sensor_status=request.sensor_status,
             conversation_history=conversation_history,
             vision_available=vision_available,
-            identified_person=identified_person,
+            visible_people=visible_people_names,
+            visible_people_description=visible_desc,
             face_detected=face_detected,
         )
 
@@ -129,7 +201,12 @@ async def perceive(request: PerceiveRequest):
         # ------------------------------------------------------------------
         prompt_summary = request.prompt or "Visual/Sensor input"
         save_interaction_log(f"Prompt: {prompt_summary} -> Speech: '{speech}' | Action: {action}")
-        save_conversation_turn(person_id, prompt_summary, speech)
+        # Save conversation turn for each recognized person (associate with None for unknowns)
+        if person_ids:
+            for pid in person_ids:
+                save_conversation_turn(pid, prompt_summary, speech)
+        else:
+            save_conversation_turn(None, prompt_summary, speech)
 
         return PerceiveResponse(speech=speech, action=action)
 

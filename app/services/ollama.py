@@ -2,7 +2,9 @@ import json
 import os
 import re
 import httpx
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
+
+from app.db import database
 
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434/api/generate")
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "openbmb/minicpm-o2.6")
@@ -11,7 +13,8 @@ REQUIRED_MODEL = os.getenv("REQUIRED_MODEL", "openbmb/minicpm-o2.6")
 
 async def check_ollama_health(required_model: str = REQUIRED_MODEL) -> tuple[bool, str]:
     """Check Ollama instance readiness via GET /api/tags and verify required model is installed."""
-    tags_url = os.getenv("OLLAMA_TAGS_URL", "http://localhost:11434/api/tags")
+    # prefer runtime-configured Ollama tags URL if available
+    tags_url = database.get_setting("ollama_tags_url", os.getenv("OLLAMA_TAGS_URL", "http://localhost:11434/api/tags"))
     try:
         async with httpx.AsyncClient(timeout=2.0, trust_env=False) as client:
             response = await client.get(tags_url)
@@ -79,18 +82,38 @@ Example: {"speech": "I can't see right now! Tell me more?", "action": "tilt_head
 
 
 
-ALLOWED_ACTIONS = {
-    "walk_around",
-    "sit",
-    "play",
-    "spin",
-    "tilt_head",
-    "sleep",
-    "investigate",
-    "stop_and_look",
-    "idle",
-    "nod",
-}
+def _get_allowed_actions() -> set:
+    """Return the allowed action set, preferring runtime-configured list."""
+    default = [
+        "walk_around",
+        "sit",
+        "play",
+        "spin",
+        "tilt_head",
+        "sleep",
+        "investigate",
+        "stop_and_look",
+        "idle",
+        "nod",
+    ]
+    configured = database.get_setting("allowed_actions", default)
+    if isinstance(configured, list):
+        try:
+            return set(str(x).strip().lower() for x in configured if x)
+        except Exception:
+            return set(default)
+    # fallback if stored as string
+    if isinstance(configured, str):
+        try:
+            parsed = json.loads(configured)
+            if isinstance(parsed, list):
+                return set(str(x).strip().lower() for x in parsed if x)
+        except Exception:
+            # comma-separated
+            parts = [p.strip().lower() for p in configured.split(",") if p.strip()]
+            if parts:
+                return set(parts)
+    return set(default)
 
 
 def enforce_word_limit(speech: str, max_words: int = 20) -> str:
@@ -103,7 +126,8 @@ def enforce_word_limit(speech: str, max_words: int = 20) -> str:
 
 def normalize_action(action: str) -> str:
     action_text = action.strip().lower()
-    if action_text in ALLOWED_ACTIONS:
+    allowed = _get_allowed_actions()
+    if action_text in allowed:
         return action_text
     return "stop_and_look"
 
@@ -139,17 +163,19 @@ def parse_ollama_response(text: str) -> Dict[str, str]:
 
 async def perceive_and_generate(
     prompt: Optional[str] = None,
-    image_frame: Optional[str] = None,
+    image_frames: Optional[List[str]] = None,
     memory_context: Optional[str] = None,
     sensor_status: Optional[Dict[str, Any]] = None,
     conversation_history: Optional[list[dict]] = None,
     client: Optional[httpx.AsyncClient] = None,
     vision_available: bool = True,
-    identified_person: Optional[str] = None,
+    visible_people: Optional[List[str]] = None,
+    visible_people_description: Optional[str] = None,
     face_detected: bool = False,
 ) -> Dict[str, str]:
     """
     Query local Ollama instance with perception data and return structured speech and action.
+    Supports multiple image frames and group-aware prompts.
     """
     user_prompt_parts = []
     if memory_context:
@@ -175,42 +201,75 @@ async def perceive_and_generate(
     else:
         user_prompt_parts.append("User Said: (No spoken text)")
 
-    # Identity context — determines how Gemi should address the person
-    if identified_person:
-        user_prompt_parts.append(f"Identified Person: {identified_person} (confirmed by face recognition). Greet them by name.")
+    # Identity context — determines how Gemi should address visible people
+    if visible_people and len(visible_people) > 0:
+        if len(visible_people) == 1 and visible_people[0] != "Unknown":
+            user_prompt_parts.append(f"Identified Person: {visible_people[0]} (confirmed by face recognition). Greet them by name.")
+        else:
+            names_list = ", ".join([n for n in visible_people if n != "Unknown"]) if visible_people else ""
+            if names_list:
+                user_prompt_parts.append(f"Visible people: {names_list}. Greet them warmly and individually, e.g. 'Hi Jam! Hi Alice!'")
+            if "Unknown" in visible_people:
+                user_prompt_parts.append("There is at least one person I don't recognize; ask their name politely.")
     elif face_detected and vision_available:
         # A face was detected but doesn't match anyone in the database
         user_prompt_parts.append(
             "Unknown Person: A face was detected but not recognized in memory. "
             "Politely ask their name, e.g. 'Hi! I don't know you yet — what's your name?'"
         )
-    # No face detected or vision unavailable — handled by AUDIO ONLY mode above
+
+    # If sequential image frames were provided, instruct the model how to use them
+    if image_frames:
+        user_prompt_parts.append(
+            "The user provided a sequence of keyframes captured while speaking. Use these sequential snapshots to understand what was shown or what changed over time."
+        )
+
+    # If available, add a short visible people description for context
+    if visible_people_description:
+        user_prompt_parts.append(f"Visible People Description: {visible_people_description}")
 
     full_user_prompt = "\n".join(user_prompt_parts)
 
+    # Respect runtime-configured Ollama model and token budget
+    model = database.get_setting("ollama_model", OLLAMA_MODEL)
+    max_tokens = database.get_setting("ollama_max_tokens", 512)
+    num_predict = database.get_setting("ollama_num_predict", 512)
+
     payload: Dict[str, Any] = {
-        "model": OLLAMA_MODEL,
+        "model": model,
         "system": SYSTEM_PROMPT,
         "prompt": full_user_prompt,
         "stream": False,
         "format": "json",
-        "max_tokens": 256,
+        # Increase token budget to avoid mid-sentence truncation
+        "max_tokens": int(max_tokens),
+        # Some Ollama frontends accept num_predict as an alternative
+        "num_predict": int(num_predict),
     }
 
-
-    if image_frame:
-        # Strip data URL prefix if present (e.g. "data:image/jpeg;base64,")
-        if "," in image_frame:
-            image_frame = image_frame.split(",", 1)[1]
-        payload["images"] = [image_frame]
+    # Attach image frames (if any) as a list of base64 strings expected by Ollama
+    if image_frames:
+        images_clean: List[str] = []
+        for frm in image_frames:
+            if not frm:
+                continue
+            if "," in frm:
+                images_clean.append(frm.split(",", 1)[1])
+            else:
+                images_clean.append(frm)
+        if images_clean:
+            payload["images"] = images_clean
 
     close_client = False
     if client is None:
-        client = httpx.AsyncClient(timeout=15.0, trust_env=False)
+        client = httpx.AsyncClient(timeout=30.0, trust_env=False)
         close_client = True
 
+    # Allow runtime override of Ollama URL
+    ollama_url = database.get_setting("ollama_url", OLLAMA_URL)
+
     try:
-        response = await client.post(OLLAMA_URL, json=payload)
+        response = await client.post(ollama_url, json=payload)
         response.raise_for_status()
         res_json = response.json()
         raw_output = res_json.get("response", "")

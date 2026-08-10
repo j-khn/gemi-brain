@@ -5,6 +5,7 @@ from fastapi import FastAPI
 
 from app.db import database
 from app.routes import health, perceive
+from app.routes import settings
 
 
 @asynccontextmanager
@@ -27,3 +28,4 @@ app = FastAPI(
 # Register routers
 app.include_router(health.router)
 app.include_router(perceive.router)
+app.include_router(settings.router)

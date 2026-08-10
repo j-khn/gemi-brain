@@ -58,7 +58,8 @@ def test_ollama_client_helpers():
 
     markdown_json = ollama_client.parse_ollama_response('```json\n{"speech": "Hi there", "action": "wave"}\n```')
     assert markdown_json["speech"] == "Hi there"
-    assert markdown_json["action"] == "wave"
+    # Unknown actions should be normalized to a safe default
+    assert markdown_json["action"] == "stop_and_look"
 
     # Test checking for a non-existent model
     ok, msg = asyncio.run(ollama_client.check_ollama_health(required_model="non_existent_model_999"))

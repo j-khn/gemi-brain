@@ -1,6 +1,6 @@
 """Pydantic schemas for the /api/perceive endpoint."""
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, List
 from pydantic import BaseModel, Field
 
 
@@ -12,6 +12,10 @@ class PerceiveRequest(BaseModel):
     image_frame: Optional[str] = Field(
         default=None,
         description="Base64-encoded image frame from the robot camera"
+    )
+    image_frames: Optional[List[str]] = Field(
+        default=None,
+        description="Optional list of base64-encoded image frames (keyframes / sequential snapshots)"
     )
     sensor_status: Optional[Dict[str, Any]] = Field(
         default=None,

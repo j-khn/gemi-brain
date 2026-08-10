@@ -1,6 +1,6 @@
 import os
 import sqlite3
-from typing import Optional
+from typing import Optional, List
 
 DB_PATH = os.getenv("DB_PATH", "gemi_memory.db")
 
@@ -61,6 +61,55 @@ def init_db() -> None:
             cursor.execute("ALTER TABLE people ADD COLUMN face_embedding TEXT DEFAULT '[]'")
             conn.commit()
 
+        # Create settings table for runtime-configurable parameters
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS settings (
+                key TEXT PRIMARY KEY,
+                value TEXT,
+                type TEXT,
+                description TEXT
+            );
+            """
+        )
+        conn.commit()
+
+        # Seed default settings if missing
+        defaults = {
+            "ollama_url": (os.getenv("OLLAMA_URL", "http://localhost:11434/api/generate"), "str", "URL for Ollama generate endpoint"),
+            "ollama_model": (os.getenv("OLLAMA_MODEL", "openbmb/minicpm-o2.6"), "str", "Default Ollama model"),
+            "ollama_tags_url": (os.getenv("OLLAMA_TAGS_URL", "http://localhost:11434/api/tags"), "str", "Ollama tags endpoint"),
+            "ollama_max_tokens": ("512", "int", "Max tokens to request from Ollama"),
+            "ollama_num_predict": ("512", "int", "Alternate token/predict budget for Ollama"),
+            "word_limit": ("20", "int", "Max words in Gemi speech responses"),
+            "face_cosine_threshold": ("0.85", "float", "Cosine similarity threshold to accept a face match"),
+            "face_euclid_threshold": ("0.42", "float", "Euclidean distance threshold to accept a face match"),
+            "face_euclid_add_threshold": ("0.2", "float", "Euclid distance above which to add new embedding"),
+            "face_embedding_cap": ("10", "int", "Max embeddings stored per person"),
+            "image_sequence_limit": ("6", "int", "Max number of image frames accepted per request"),
+            "allowed_actions": (json.dumps([
+                "walk_around",
+                "sit",
+                "play",
+                "spin",
+                "tilt_head",
+                "sleep",
+                "investigate",
+                "stop_and_look",
+                "idle",
+                "nod",
+            ]), "json", "Allowed action set for robot responses"),
+        }
+
+        for k, (v, t, d) in defaults.items():
+            cursor.execute("SELECT 1 FROM settings WHERE key = ?", (k,))
+            if cursor.fetchone() is None:
+                cursor.execute(
+                    "INSERT INTO settings (key, value, type, description) VALUES (?, ?, ?, ?)",
+                    (k, str(v), t, d),
+                )
+        conn.commit()
+
 
 def get_person_context(person_name: Optional[str] = None) -> str:
     """Fetch memory context for a given person."""
@@ -87,6 +136,45 @@ def get_person_context(person_name: Optional[str] = None) -> str:
                 context_parts.append(f"Preferences: {pref_str}")
 
     return " | ".join(context_parts)
+
+
+def get_person_contexts(names: List[str]) -> str:
+    """Return an aggregated context string for a list of person names.
+
+    Example return: "Visible people: Jam (father), Alice (daughter) | Person: Jam. Notes: ..."
+    """
+    if not names:
+        return ""
+
+    visible_parts = []
+    details_parts = []
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        for name in names:
+            if not name or not name.strip():
+                continue
+            cursor.execute(
+                "SELECT id, name, notes FROM people WHERE LOWER(name) = LOWER(?)",
+                (name.strip(),),
+            )
+            person = cursor.fetchone()
+            if person:
+                note = person["notes"] or ""
+                # short descriptor for visible list
+                short = person["name"]
+                if note:
+                    # try to pick a short parenthetical from notes (first 40 chars)
+                    short += f" ({note[:40].strip()})"
+                visible_parts.append(short)
+                details_parts.append(f"Person: {person['name']}. Notes: {note or 'None'}")
+            else:
+                visible_parts.append(name)
+
+    visible_desc = ", ".join(visible_parts)
+    details = " | ".join(details_parts)
+    if details:
+        return f"Visible people: {visible_desc} | {details}"
+    return f"Visible people: {visible_desc}"
 
 
 
@@ -202,6 +290,79 @@ def check_db_health() -> tuple[bool, str]:
             return True, "ok"
     except Exception as exc:
         return False, f"database_error: {str(exc)}"
+
+
+def get_setting(key: str, default: Optional[str] = None):
+    """Retrieve a setting value (as string) or default if not present."""
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT value, type FROM settings WHERE key = ?", (key,))
+        row = cursor.fetchone()
+        if not row:
+            return default
+        val, typ = row[0], row[1]
+        # Parse by type
+        try:
+            if typ == "int":
+                return int(val)
+            if typ == "float":
+                return float(val)
+            if typ == "str":
+                return str(val)
+            if typ == "json":
+                try:
+                    return json.loads(val)
+                except Exception:
+                    return val
+        except Exception:
+            return val
+        return val
+
+
+def set_setting(key: str, value: str, typ: str = "str", description: Optional[str] = None):
+    """Upsert a setting key with value and type.
+
+    Returns True if a change was made.
+    """
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT 1 FROM settings WHERE key = ?", (key,))
+        exists = cursor.fetchone() is not None
+        if exists:
+            cursor.execute("UPDATE settings SET value = ?, type = ?, description = COALESCE(?, description) WHERE key = ?", (str(value), typ, description, key))
+        else:
+            cursor.execute("INSERT INTO settings (key, value, type, description) VALUES (?, ?, ?, ?)", (key, str(value), typ, description or ""))
+        conn.commit()
+        return True
+
+
+def get_all_settings() -> dict:
+    """Return all settings as parsed types in a dict."""
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT key, value, type, description FROM settings ORDER BY key")
+        rows = cursor.fetchall()
+        result = {}
+        for row in rows:
+            key = row[0]
+            val = row[1]
+            typ = row[2]
+            try:
+                if typ == "int":
+                    parsed = int(val)
+                elif typ == "float":
+                    parsed = float(val)
+                elif typ == "json":
+                    try:
+                        parsed = json.loads(val)
+                    except Exception:
+                        parsed = val
+                else:
+                    parsed = val
+            except Exception:
+                parsed = val
+            result[key] = {"value": parsed, "type": typ, "description": row[3]}
+        return result
 
 # New helpers for face embeddings (JSON stored as text)
 import json
