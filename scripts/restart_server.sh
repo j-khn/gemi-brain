@@ -71,6 +71,16 @@ LOG_FILE="logs/gemi_brain.log"
 echo "Starting Gemi Brain on ${HOST}:${PORT}..."
 echo "Logs will be written to ${LOG_FILE}"
 
+start_detached_server() {
+  # GitHub Actions cleans up tracked child processes at job completion.
+  export RUNNER_TRACKING_ID=""
+  nohup "${PYTHON_CMD[@]}" -m uvicorn app.main:app \
+    --host "${HOST}" --port "${PORT}" > "$LOG_FILE" 2>&1 &
+  PID=$!
+  disown "$PID" 2>/dev/null || true
+  echo "Gemi Brain started as detached process with PID ${PID}."
+}
+
 if [ "$(uname -s)" = "Darwin" ] && command -v launchctl >/dev/null 2>&1; then
   LABEL="com.gemi.brain"
   LAUNCH_AGENTS_DIR="${HOME}/Library/LaunchAgents"
@@ -119,16 +129,17 @@ with open(plist_path, "wb") as file:
 PY
 
   launchctl bootout "${LAUNCHD_DOMAIN}/${LABEL}" >/dev/null 2>&1 || true
-  launchctl bootstrap "${LAUNCHD_DOMAIN}" "${PLIST_FILE}"
-  launchctl kickstart -k "${LAUNCHD_DOMAIN}/${LABEL}"
-  echo "Gemi Brain launched as ${LABEL}."
+  if launchctl bootstrap "${LAUNCHD_DOMAIN}" "${PLIST_FILE}" &&
+    launchctl kickstart -k "${LAUNCHD_DOMAIN}/${LABEL}"; then
+    echo "Gemi Brain launched as ${LABEL}."
+  else
+    launchctl bootout "${LAUNCHD_DOMAIN}/${LABEL}" >/dev/null 2>&1 || true
+    echo "WARNING: launchd rejected the user service; using a detached process."
+    start_detached_server
+  fi
 else
   # Fallback for non-macOS development environments.
-  export RUNNER_TRACKING_ID=""
-  nohup "$PYTHON_BIN" -m uvicorn app.main:app --host "${HOST}" --port "${PORT}" > "$LOG_FILE" 2>&1 &
-  PID=$!
-  disown "$PID" 2>/dev/null || true
-  echo "Gemi Brain started with PID ${PID}"
+  start_detached_server
 fi
 
 for attempt in {1..60}; do
