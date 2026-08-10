@@ -30,6 +30,36 @@ async def list_available_apis():
                 "methods": methods,
                 "summary": summary,
             })
+    # Also include endpoints discovered via the OpenAPI spec (more reliable across versions)
+    try:
+        spec = app.openapi() or {}
+        spec_paths = spec.get("paths", {})
+        for p, methods in spec_paths.items():
+            # methods is a dict of operations (get/post/etc.)
+            op_methods = [m.upper() for m in methods.keys()]
+            # find existing entry to merge methods
+            existing = next((e for e in endpoints if e.get("path") == p), None)
+            summary = ""
+            # OpenAPI operation object may contain summary in the first method
+            if methods:
+                first_op = next(iter(methods.values()))
+                summary = first_op.get("summary", "") if isinstance(first_op, dict) else ""
+            if existing:
+                existing_methods = set(existing.get("methods", []))
+                existing_methods.update(op_methods)
+                existing["methods"] = sorted(existing_methods)
+                if not existing.get("summary") and summary:
+                    existing["summary"] = summary
+            else:
+                endpoints.append({
+                    "path": p,
+                    "name": "",
+                    "methods": sorted(op_methods),
+                    "summary": summary,
+                })
+    except Exception:
+        # If OpenAPI generation fails in some environments, ignore and return gathered routes
+        pass
     return {"apis": endpoints}
 
 
