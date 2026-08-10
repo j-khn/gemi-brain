@@ -1,9 +1,16 @@
 #!/bin/bash
-set -e
+set -Eeuo pipefail
+
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$(cd -- "${SCRIPT_DIR}/.." && pwd)"
+cd "${PROJECT_DIR}"
 
 # Load environment from .env if present
 if [ -f .env ]; then
-  export $(grep -v '^#' .env | xargs)
+  set -a
+  # shellcheck disable=SC1091
+  source .env
+  set +a
 fi
 
 HOST=${HOST:-0.0.0.0}
@@ -18,9 +25,9 @@ fi
 
 PYTHON_BIN="${PYTHON_BIN:-}"
 if [ -z "$PYTHON_BIN" ] && [ -x .venv/bin/python ]; then
-  PYTHON_BIN=".venv/bin/python"
+  PYTHON_BIN="${PROJECT_DIR}/.venv/bin/python"
 elif [ -z "$PYTHON_BIN" ] && [ -x .venv/bin/python3 ]; then
-  PYTHON_BIN=".venv/bin/python3"
+  PYTHON_BIN="${PROJECT_DIR}/.venv/bin/python3"
 elif [ -z "$PYTHON_BIN" ] && command -v python3 >/dev/null 2>&1; then
   PYTHON_BIN="$(command -v python3)"
 elif [ -z "$PYTHON_BIN" ] && command -v python >/dev/null 2>&1; then
@@ -34,16 +41,17 @@ if [ -z "$PYTHON_BIN" ]; then
 fi
 
 echo "Using Python interpreter: $PYTHON_BIN"
-$PYTHON_BIN --version || true
-$PYTHON_BIN -m pip --version || true
+"$PYTHON_BIN" --version
+"$PYTHON_BIN" -m pip --version
 
 if [ -d .venv/bin ]; then
   echo "Virtualenv .venv/bin contents:"
   ls -1 .venv/bin | sort
 fi
 
-if ! "$PYTHON_BIN" -c 'import uvicorn' >/dev/null 2>&1; then
+if ! "$PYTHON_BIN" -c 'import uvicorn, app.main' >/dev/null 2>&1; then
   echo "ERROR: uvicorn is not installed in $PYTHON_BIN environment."
+  echo "The application or its dependencies cannot be imported."
   echo "Try installing dependencies with: $PYTHON_BIN -m pip install -r requirements.txt"
   exit 1
 fi
@@ -58,12 +66,18 @@ PID=$!
 
 echo "Gemi Brain started with PID ${PID}"
 
-sleep 3
-if lsof -iTCP:${PORT} -sTCP:LISTEN -t >/dev/null 2>&1; then
-  echo "Process is listening on port ${PORT}."
-else
-  echo "ERROR: Process is not listening on port ${PORT}."
-  echo "Last 80 lines of log:"
-  tail -n 80 "$LOG_FILE" || true
-  exit 1
-fi
+for attempt in {1..15}; do
+  if lsof -nP -iTCP:"${PORT}" -sTCP:LISTEN -t >/dev/null 2>&1; then
+    echo "Process is listening on port ${PORT}."
+    exit 0
+  fi
+  if ! kill -0 "${PID}" >/dev/null 2>&1; then
+    break
+  fi
+  sleep 1
+done
+
+echo "ERROR: Process is not listening on port ${PORT}."
+echo "Last 80 lines of log:"
+tail -n 80 "$LOG_FILE" || true
+exit 1

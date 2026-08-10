@@ -20,6 +20,8 @@ jobs:
 
       - name: Install dependencies using runner Python
         run: |
+          brew install cmake pkg-config libpng
+          echo "PKG_CONFIG_PATH=$(brew --prefix libpng)/lib/pkgconfig:${PKG_CONFIG_PATH:-}" >> "$GITHUB_ENV"
           if command -v python3 >/dev/null 2>&1; then
             PYTHON=python3
           elif command -v python >/dev/null 2>&1; then
@@ -31,14 +33,18 @@ jobs:
           $PYTHON --version
           $PYTHON -m venv .venv
           source .venv/bin/activate
-          python -m pip install --upgrade pip
-          python -m pip install -r requirements.txt
+          python -m pip install --upgrade pip setuptools wheel
+          python -m pip install --no-cache-dir -r requirements.txt
         shell: bash
 
       - name: Configure environment
         run: |
-          echo "HOST=${{ vars.APP_HOST }}" > .env
-          echo "PORT=${{ vars.APP_PORT }}" >> .env
+          HOST="${{ vars.APP_HOST }}"
+          PORT="${{ vars.APP_PORT }}"
+          test -n "$HOST" || HOST="0.0.0.0"
+          test -n "$PORT" || PORT="8765"
+          echo "HOST=$HOST" > .env
+          echo "PORT=$PORT" >> .env
           echo "OLLAMA_URL=${{ vars.OLLAMA_URL }}" >> .env
           echo "APP_ENV=production" >> .env
 
@@ -51,15 +57,19 @@ jobs:
 
       - name: Verify deployed service
         run: |
-          echo "Checking local deployment on port ${APP_PORT:-${{ vars.APP_PORT }}}..."
-          sleep 3
-          if curl -f "http://127.0.0.1:${{ vars.APP_PORT }}/api/health" >/dev/null 2>&1; then
-            echo "Deployment check passed."
-          else
-            echo "Deployment check failed. Dumping logs..."
-            if [ -f logs/gemi_brain.log ]; then
-              tail -n 80 logs/gemi_brain.log
+          PORT="${{ vars.APP_PORT }}"
+          test -n "$PORT" || PORT="8765"
+          echo "Checking local deployment on port ${PORT}..."
+          for attempt in {1..15}; do
+            if curl --fail --silent --show-error "http://127.0.0.1:${PORT}/api/health" >/dev/null; then
+              echo "Deployment check passed."
+              exit 0
             fi
-            exit 1
+            sleep 1
+          done
+          echo "Deployment check failed. Dumping logs..."
+          if [ -f logs/gemi_brain.log ]; then
+            tail -n 80 logs/gemi_brain.log
           fi
+          exit 1
         shell: bash
