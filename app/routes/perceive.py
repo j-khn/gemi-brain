@@ -7,6 +7,7 @@ from app.db.database import (
     get_all_face_embeddings,
     add_face_embedding,
     get_person_context,
+    get_person_contexts,
     get_conversation_history,
     get_conversation_history_by_query,
     get_recent_conversation_history,

@@ -46,15 +46,10 @@ gemi-brain/
 
 - Python 3.11+
 - [Ollama](https://ollama.com/) running locally with the `openbmb/minicpm-o2.6` model
-- *(Required for image mode)* CMake, pkg-config, and libpng for face recognition
+- CMake, pkg-config, and libpng for face recognition image mode
   - macOS example:
     ```bash
     brew install cmake pkg-config libpng
-    ```
-  - Then install Python packages into the venv:
-    ```bash
-    source venv/bin/activate
-    pip install -r requirements.txt
     ```
 
 ### 2. Install dependencies
@@ -126,10 +121,10 @@ When enabled:
 - **Mismatched claim**: if `person_name` doesn't match the recognized face, Gemi politely challenges the identity
 - **Unknown person**: if a face is detected but not recognized, Gemi asks for their name
 
-To enable face recognition:
+To enable face recognition for image mode:
 ```bash
 brew install cmake libpng
-pip install face_recognition
+pip install -r requirements.txt
 ```
 
 ---

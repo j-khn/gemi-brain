@@ -135,6 +135,11 @@ def test_health_requires_face_recognition(monkeypatch):
     client = TestClient(app)
     monkeypatch.setattr(perceive_route.vision, "check_face_recognition_health", lambda: (False, "missing face_recognition library"))
 
+    async def fake_health(required_model=ollama.REQUIRED_MODEL):
+        return True, "ok"
+
+    monkeypatch.setattr(ollama, "check_ollama_health", fake_health)
+
     response = client.get("/api/health/ready")
     assert response.status_code == 503
     assert response.json()["checks"]["face_recognition"] == "missing face_recognition library"

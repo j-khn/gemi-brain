@@ -75,7 +75,7 @@ async def readiness_check():
     db_ok, db_msg = database.check_db_health()
     ollama_ok, ollama_msg = await ollama.check_ollama_health()
 
-    _, face_msg = vision.check_face_recognition_health()
+    face_ok, face_msg = vision.check_face_recognition_health()
 
     checks = {
         "database": db_msg,
@@ -83,11 +83,12 @@ async def readiness_check():
         "face_recognition": face_msg,
     }
 
-    if db_ok and ollama_ok and checks["face_recognition"] == "ok":
+    if db_ok and ollama_ok and face_ok:
         return JSONResponse(
             status_code=status.HTTP_200_OK,
             content={"status": "ready", "checks": checks}
         )
+
     return JSONResponse(
         status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
         content={"status": "unhealthy", "checks": checks}
