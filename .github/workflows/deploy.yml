@@ -45,6 +45,8 @@ jobs:
       - name: Restart Gemi Brain server
         run: |
           chmod +x scripts/restart_server.sh
+          export PYTHON_BIN="${PWD}/.venv/bin/python"
+          export PATH="${PWD}/.venv/bin:${PATH}"
           ./scripts/restart_server.sh
 
       - name: Verify deployed service
