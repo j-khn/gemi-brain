@@ -60,6 +60,16 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
+On Apple Silicon macOS, install the required face-recognition packages with
+the prebuilt `dlib-bin` wheel to avoid compiling dlib's bundled ARM libpng:
+
+```bash
+python -m pip install -r <(python -c 'from pathlib import Path; print("\n".join(line for line in Path("requirements.txt").read_text().splitlines() if line.strip().lower() != "face_recognition"))')
+python -m pip install dlib-bin==19.24.6
+python -m pip install --no-deps face-recognition==1.3.0
+python -m pip install face-recognition-models==0.3.0
+```
+
 ### 3. Run the server
 
 ```bash
