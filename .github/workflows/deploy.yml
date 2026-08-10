@@ -46,3 +46,18 @@ jobs:
         run: |
           chmod +x scripts/restart_server.sh
           ./scripts/restart_server.sh
+
+      - name: Verify deployed service
+        run: |
+          echo "Checking local deployment on port ${APP_PORT:-${{ vars.APP_PORT }}}..."
+          sleep 3
+          if curl -f "http://127.0.0.1:${{ vars.APP_PORT }}/api/health" >/dev/null 2>&1; then
+            echo "Deployment check passed."
+          else
+            echo "Deployment check failed. Dumping logs..."
+            if [ -f logs/gemi_brain.log ]; then
+              tail -n 80 logs/gemi_brain.log
+            fi
+            exit 1
+          fi
+        shell: bash
