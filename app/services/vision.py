@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 try:
     import face_recognition as _face_recognition  # noqa: F401
     _FACE_RECOGNITION_AVAILABLE = True
-except Exception as exc:
+except BaseException as exc:
     _face_recognition = None  # type: ignore
     _FACE_RECOGNITION_AVAILABLE = False
     logger.warning(

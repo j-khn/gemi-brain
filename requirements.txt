@@ -9,6 +9,7 @@ pydantic
 python-dotenv
 pytest
 pytest-asyncio
+setuptools
 numpy
 pillow
 face_recognition

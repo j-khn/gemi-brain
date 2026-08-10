@@ -157,7 +157,7 @@ This repository supports self-hosted deployment on a local macOS runner.
 
 1. Configure the runner machine and labels:
    - `self-hosted`
-   - `macOS`
+   - `macos`
    - `X64`
    - runner name: `MacBook-Pro`
 
@@ -169,17 +169,20 @@ This repository supports self-hosted deployment on a local macOS runner.
 3. On the runner machine, start the Actions runner from the repository workspace:
 
 ```bash
-test@MacBook-Pro actions-runner % ./run.sh
+cd /Users/test/Projects/gemi-brain
+./actions-runner/run.sh
 ```
 
-4. For local testing, copy the example env file and restart the server:
+4. The deployment workflow can now run automatically after a successful `CI` workflow on `develop` or `main`, or manually via `workflow_dispatch`.
+
+5. For local testing, copy the example env file and restart the server:
 
 ```bash
 cp .env.example .env
 ./scripts/restart_server.sh
 ```
 
-5. The app will bind to `0.0.0.0` when the runner or script uses that host.
+6. The app will bind to `0.0.0.0` when the runner or script uses that host.
 
 ---
 
