@@ -16,11 +16,18 @@ jobs:
 
       - name: Install dependencies using runner Python
         run: |
+          brew install cmake pkg-config libpng
+          LIBPNG_PREFIX="$(brew --prefix libpng)"
+          export PKG_CONFIG_PATH="${LIBPNG_PREFIX}/lib/pkgconfig:${PKG_CONFIG_PATH:-}"
+          export C_INCLUDE_PATH="${LIBPNG_PREFIX}/include:${C_INCLUDE_PATH:-}"
+          export LIBRARY_PATH="${LIBPNG_PREFIX}/lib:${LIBRARY_PATH:-}"
+          export CPPFLAGS="-I${LIBPNG_PREFIX}/include ${CPPFLAGS:-}"
+          export LDFLAGS="-L${LIBPNG_PREFIX}/lib ${LDFLAGS:-}"
           python3 --version
           python3 -m venv .venv
           source .venv/bin/activate
-          python -m pip install --upgrade pip
-          python -m pip install -r requirements.txt
+          python -m pip install --upgrade pip setuptools wheel
+          python -m pip install --no-cache-dir -r requirements.txt
         shell: bash
 
       - name: Run tests
