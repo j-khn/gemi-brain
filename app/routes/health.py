@@ -18,14 +18,17 @@ async def list_available_apis():
     from app.main import app  # local import to avoid circular dependency
     endpoints = []
     for route in app.routes:
-        if isinstance(route, APIRoute):
+        # Some FastAPI/Starlette versions expose different route classes; prefer duck-typing
+        if hasattr(route, "methods") and hasattr(route, "path"):
+            methods = sorted(list(route.methods)) if getattr(route, "methods", None) else []
+            summary = getattr(route, "summary", None) or (
+                getattr(route, "description", "").strip().split("\n")[0] if getattr(route, "description", None) else ""
+            )
             endpoints.append({
                 "path": route.path,
-                "name": route.name,
-                "methods": sorted(list(route.methods)),
-                "summary": route.summary or (
-                    route.description.strip().split("\n")[0] if route.description else ""
-                ),
+                "name": getattr(route, "name", ""),
+                "methods": methods,
+                "summary": summary,
             })
     return {"apis": endpoints}
 
