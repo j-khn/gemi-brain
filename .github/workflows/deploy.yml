@@ -74,7 +74,7 @@ jobs:
           PORT="${{ vars.APP_PORT }}"
           test -n "$PORT" || PORT="8765"
           echo "Checking local deployment on port ${PORT}..."
-          for attempt in {1..15}; do
+          for attempt in {1..60}; do
             if curl --fail --silent --show-error "http://127.0.0.1:${PORT}/api/health" >/dev/null; then
               echo "Deployment check passed."
               exit 0

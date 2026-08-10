@@ -66,9 +66,10 @@ PID=$!
 
 echo "Gemi Brain started with PID ${PID}"
 
-for attempt in {1..15}; do
-  if lsof -nP -iTCP:"${PORT}" -sTCP:LISTEN -t >/dev/null 2>&1; then
-    echo "Process is listening on port ${PORT}."
+for attempt in {1..60}; do
+  if curl --fail --silent --show-error --connect-timeout 1 \
+      "http://127.0.0.1:${PORT}/api/health" >/dev/null 2>&1; then
+    echo "Health endpoint is ready on port ${PORT}."
     exit 0
   fi
   if ! kill -0 "${PID}" >/dev/null 2>&1; then
@@ -77,7 +78,9 @@ for attempt in {1..15}; do
   sleep 1
 done
 
-echo "ERROR: Process is not listening on port ${PORT}."
+echo "ERROR: Health endpoint is not ready on port ${PORT}."
+echo "Listener details:"
+lsof -nP -iTCP:"${PORT}" -sTCP:LISTEN || true
 echo "Last 80 lines of log:"
 tail -n 80 "$LOG_FILE" || true
 exit 1
