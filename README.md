@@ -171,7 +171,7 @@ This repository supports self-hosted deployment on a local macOS runner.
    - `X64`
    - runner name: `MacBook-Pro`
 
-2. Set repository secrets for deployment:
+2. Set repository/environment variables for deployment:
    - `APP_HOST`
    - `APP_PORT`
    - `OLLAMA_URL`
@@ -183,7 +183,7 @@ cd /Users/test/Projects/gemi-brain
 ./actions-runner/run.sh
 ```
 
-4. The deployment workflow can now run automatically after a successful `CI` workflow on `develop` or `main`, or manually via `workflow_dispatch`.
+4. The CI workflow runs deployment as a reusable workflow after tests pass on `develop` or `main`, using the exact tested commit. It can also be started manually via `workflow_dispatch`.
 
 5. For local testing, copy the example env file and restart the server:
 

@@ -1,16 +1,11 @@
 name: Deploy to Self-hosted Runner
 
 on:
-  workflow_run:
-    workflows:
-      - CI
-    types:
-      - completed
+  workflow_call:
   workflow_dispatch: # manual run available from the Actions page
 
 jobs:
   deploy:
-    if: ${{ (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && (github.event.workflow_run.head_branch == 'develop' || github.event.workflow_run.head_branch == 'main')) || github.event_name == 'workflow_dispatch' }}
     name: Deploy on self-hosted macOS runner
     runs-on: [self-hosted, macos]
     environment: production
@@ -18,14 +13,20 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          ref: ${{ github.sha }}
 
       - name: Install dependencies using runner Python
         run: |
-          test "$(uname -m)" = "arm64" || {
-            echo "This deployment requires an Apple Silicon arm64 runner for dlib-bin." >&2
-            exit 1
-          }
+          ARCH="$(uname -m)"
+          case "$ARCH" in
+            arm64|x86_64)
+              echo "Using supported macOS architecture: ${ARCH}"
+              ;;
+            *)
+              echo "Unsupported macOS architecture for dlib-bin: ${ARCH}" >&2
+              exit 1
+              ;;
+          esac
           if command -v python3 >/dev/null 2>&1; then
             PYTHON=python3
           elif command -v python >/dev/null 2>&1; then
