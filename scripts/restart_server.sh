@@ -61,8 +61,12 @@ LOG_FILE="logs/gemi_brain.log"
 
 echo "Starting Gemi Brain on ${HOST}:${PORT}..."
 echo "Logs will be written to ${LOG_FILE}"
+# GitHub Actions cleans up child processes at job completion when they carry
+# RUNNER_TRACKING_ID. Remove it so this self-hosted service survives the job.
+export RUNNER_TRACKING_ID=""
 nohup "$PYTHON_BIN" -m uvicorn app.main:app --host "${HOST}" --port "${PORT}" > "$LOG_FILE" 2>&1 &
 PID=$!
+disown "$PID" 2>/dev/null || true
 
 echo "Gemi Brain started with PID ${PID}"
 
