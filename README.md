@@ -185,14 +185,18 @@ cd /Users/test/Projects/gemi-brain
 
 4. The CI workflow runs deployment as a reusable workflow after tests pass on `develop` or `main`, using the exact tested commit. It can also be started manually via `workflow_dispatch`.
 
-5. For local testing, copy the example env file and restart the server:
+5. Deployment copies the tested application to `~/.gemi-brain`, creates a macOS
+   `launchd` service, and binds it to `0.0.0.0:${APP_PORT}`. The service is
+   independent of the Actions workspace and remains running after the job ends.
+
+6. For local testing, copy the example env file and restart the server:
 
 ```bash
 cp .env.example .env
 ./scripts/restart_server.sh
 ```
 
-6. The app will bind to `0.0.0.0` when the runner or script uses that host.
+7. The app will bind to `0.0.0.0` when the runner or script uses that host.
 
 ---
 

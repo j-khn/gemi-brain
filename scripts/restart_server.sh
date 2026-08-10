@@ -61,14 +61,66 @@ LOG_FILE="logs/gemi_brain.log"
 
 echo "Starting Gemi Brain on ${HOST}:${PORT}..."
 echo "Logs will be written to ${LOG_FILE}"
-# GitHub Actions cleans up child processes at job completion when they carry
-# RUNNER_TRACKING_ID. Remove it so this self-hosted service survives the job.
-export RUNNER_TRACKING_ID=""
-nohup "$PYTHON_BIN" -m uvicorn app.main:app --host "${HOST}" --port "${PORT}" > "$LOG_FILE" 2>&1 &
-PID=$!
-disown "$PID" 2>/dev/null || true
 
-echo "Gemi Brain started with PID ${PID}"
+if [ "$(uname -s)" = "Darwin" ] && command -v launchctl >/dev/null 2>&1; then
+  LABEL="com.gemi.brain"
+  LAUNCH_AGENTS_DIR="${HOME}/Library/LaunchAgents"
+  PLIST_FILE="${LAUNCH_AGENTS_DIR}/${LABEL}.plist"
+  LAUNCHD_DOMAIN="gui/$(id -u)"
+
+  mkdir -p "${LAUNCH_AGENTS_DIR}"
+  : > "${LOG_FILE}"
+
+  "$PYTHON_BIN" - "$PLIST_FILE" "$PROJECT_DIR" "$PYTHON_BIN" "$HOST" "$PORT" "${OLLAMA_URL:-}" <<'PY'
+import plistlib
+import sys
+from pathlib import Path
+
+plist_path, project_dir, python_bin, host, port, ollama_url = sys.argv[1:]
+environment = {
+    "HOST": host,
+    "PORT": port,
+    "PATH": f"{project_dir}/.venv/bin:/usr/bin:/bin:/usr/sbin:/sbin",
+}
+if ollama_url:
+    environment["OLLAMA_URL"] = ollama_url
+
+plist = {
+    "Label": "com.gemi.brain",
+    "ProgramArguments": [
+        python_bin,
+        "-m",
+        "uvicorn",
+        "app.main:app",
+        "--host",
+        host,
+        "--port",
+        port,
+    ],
+    "WorkingDirectory": project_dir,
+    "EnvironmentVariables": environment,
+    "RunAtLoad": True,
+    "KeepAlive": True,
+    "StandardOutPath": str(Path(project_dir) / "logs" / "gemi_brain.log"),
+    "StandardErrorPath": str(Path(project_dir) / "logs" / "gemi_brain.log"),
+}
+
+with open(plist_path, "wb") as file:
+    plistlib.dump(plist, file)
+PY
+
+  launchctl bootout "${LAUNCHD_DOMAIN}/${LABEL}" >/dev/null 2>&1 || true
+  launchctl bootstrap "${LAUNCHD_DOMAIN}" "${PLIST_FILE}"
+  launchctl kickstart -k "${LAUNCHD_DOMAIN}/${LABEL}"
+  echo "Gemi Brain launched as ${LABEL}."
+else
+  # Fallback for non-macOS development environments.
+  export RUNNER_TRACKING_ID=""
+  nohup "$PYTHON_BIN" -m uvicorn app.main:app --host "${HOST}" --port "${PORT}" > "$LOG_FILE" 2>&1 &
+  PID=$!
+  disown "$PID" 2>/dev/null || true
+  echo "Gemi Brain started with PID ${PID}"
+fi
 
 for attempt in {1..60}; do
   if curl --fail --silent --show-error --connect-timeout 1 \
@@ -76,7 +128,7 @@ for attempt in {1..60}; do
     echo "Health endpoint is ready on port ${PORT}."
     exit 0
   fi
-  if ! kill -0 "${PID}" >/dev/null 2>&1; then
+  if [ -n "${PID:-}" ] && ! kill -0 "${PID}" >/dev/null 2>&1; then
     break
   fi
   sleep 1

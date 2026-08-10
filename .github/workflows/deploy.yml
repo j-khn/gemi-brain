@@ -27,6 +27,16 @@ jobs:
               exit 1
               ;;
           esac
+          DEPLOY_DIR="${HOME}/.gemi-brain"
+          mkdir -p "${DEPLOY_DIR}"
+          rsync -a --delete \
+            --exclude '.git/' \
+            --exclude '.venv/' \
+            --exclude '.env' \
+            --exclude 'logs/' \
+            --exclude '*.db' \
+            "${GITHUB_WORKSPACE}/" "${DEPLOY_DIR}/"
+          echo "DEPLOY_DIR=${DEPLOY_DIR}" >> "$GITHUB_ENV"
           if command -v python3 >/dev/null 2>&1; then
             PYTHON=python3
           elif command -v python >/dev/null 2>&1; then
@@ -36,12 +46,13 @@ jobs:
             exit 1
           fi
           $PYTHON --version
-          $PYTHON -m venv .venv
-          source .venv/bin/activate
+          $PYTHON -m venv "${DEPLOY_DIR}/.venv"
+          source "${DEPLOY_DIR}/.venv/bin/activate"
           python -m pip install --upgrade pip setuptools wheel
-          python - <<'PY'
+          python - "${DEPLOY_DIR}/requirements.txt" <<'PY'
           from pathlib import Path
-          requirements = Path("requirements.txt").read_text().splitlines()
+          import sys
+          requirements = Path(sys.argv[1]).read_text().splitlines()
           Path("/tmp/gemi-requirements.txt").write_text(
               "\n".join(line for line in requirements
                         if line.strip().lower() != "face_recognition") + "\n"
@@ -58,18 +69,21 @@ jobs:
         run: |
           HOST="${{ vars.APP_HOST }}"
           PORT="${{ vars.APP_PORT }}"
+          OLLAMA_URL="${{ vars.OLLAMA_URL }}"
           test -n "$HOST" || HOST="0.0.0.0"
           test -n "$PORT" || PORT="8765"
-          echo "HOST=$HOST" > .env
-          echo "PORT=$PORT" >> .env
-          echo "OLLAMA_URL=${{ vars.OLLAMA_URL }}" >> .env
-          echo "APP_ENV=production" >> .env
+          test -n "$OLLAMA_URL" || OLLAMA_URL="http://localhost:11434/api/generate"
+          echo "HOST=$HOST" > "${DEPLOY_DIR}/.env"
+          echo "PORT=$PORT" >> "${DEPLOY_DIR}/.env"
+          echo "OLLAMA_URL=$OLLAMA_URL" >> "${DEPLOY_DIR}/.env"
+          echo "APP_ENV=production" >> "${DEPLOY_DIR}/.env"
 
       - name: Restart Gemi Brain server
         run: |
+          cd "${DEPLOY_DIR}"
           chmod +x scripts/restart_server.sh
-          export PYTHON_BIN="${PWD}/.venv/bin/python"
-          export PATH="${PWD}/.venv/bin:${PATH}"
+          export PYTHON_BIN="${DEPLOY_DIR}/.venv/bin/python"
+          export PATH="${DEPLOY_DIR}/.venv/bin:${PATH}"
           ./scripts/restart_server.sh
 
       - name: Verify deployed service
@@ -85,8 +99,8 @@ jobs:
             sleep 1
           done
           echo "Deployment check failed. Dumping logs..."
-          if [ -f logs/gemi_brain.log ]; then
-            tail -n 80 logs/gemi_brain.log
+          if [ -f "${DEPLOY_DIR}/logs/gemi_brain.log" ]; then
+            tail -n 80 "${DEPLOY_DIR}/logs/gemi_brain.log"
           fi
           exit 1
         shell: bash
