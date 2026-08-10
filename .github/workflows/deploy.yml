@@ -1,0 +1,40 @@
+name: Deploy to Self-hosted Runner
+
+on:
+  push:
+    branches:
+      - develop
+      - main
+
+jobs:
+  deploy:
+    name: Deploy on self-hosted macOS runner
+    runs-on: self-hosted
+    environment: production
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m venv .venv
+          source .venv/bin/activate
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+
+      - name: Configure environment
+        run: |
+          echo "HOST=${{ secrets.APP_HOST }}" > .env
+          echo "PORT=${{ secrets.APP_PORT }}" >> .env
+          echo "OLLAMA_URL=${{ secrets.OLLAMA_URL }}" >> .env
+          echo "APP_ENV=production" >> .env
+
+      - name: Restart Gemi Brain server
+        run: |
+          chmod +x scripts/restart_server.sh
+          ./scripts/restart_server.sh

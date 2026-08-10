@@ -156,6 +156,38 @@ pytest tests/ -v
 
 ---
 
+## 🚀 Self-hosted Deployment
+
+This repository supports self-hosted deployment on a local macOS runner.
+
+1. Configure the runner machine and labels:
+   - `self-hosted`
+   - `macOS`
+   - `X64`
+   - runner name: `MacBook-Pro`
+
+2. Set repository secrets for deployment:
+   - `APP_HOST`
+   - `APP_PORT`
+   - `OLLAMA_URL`
+
+3. On the runner machine, start the Actions runner from the repository workspace:
+
+```bash
+test@MacBook-Pro actions-runner % ./run.sh
+```
+
+4. For local testing, copy the example env file and restart the server:
+
+```bash
+cp .env.example .env
+./scripts/restart_server.sh
+```
+
+5. The app will bind to `0.0.0.0` when the runner or script uses that host.
+
+---
+
 ## ⚙️ Environment Variables
 
 | Variable | Default | Description |
