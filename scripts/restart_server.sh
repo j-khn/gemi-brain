@@ -40,16 +40,25 @@ if [ -z "$PYTHON_BIN" ]; then
   exit 1
 fi
 
+PYTHON_CMD=("$PYTHON_BIN")
+if [ "$(uname -s)" = "Darwin" ]; then
+  if [ "$(sysctl -in hw.optional.arm64 2>/dev/null || true)" = "1" ]; then
+    PYTHON_CMD=(arch -arm64 "$PYTHON_BIN")
+  else
+    PYTHON_CMD=(arch -x86_64 "$PYTHON_BIN")
+  fi
+fi
+
 echo "Using Python interpreter: $PYTHON_BIN"
-"$PYTHON_BIN" --version
-"$PYTHON_BIN" -m pip --version
+"${PYTHON_CMD[@]}" --version
+"${PYTHON_CMD[@]}" -m pip --version
 
 if [ -d .venv/bin ]; then
   echo "Virtualenv .venv/bin contents:"
   ls -1 .venv/bin | sort
 fi
 
-if ! "$PYTHON_BIN" -c 'import uvicorn, app.main' >/dev/null 2>&1; then
+if ! "${PYTHON_CMD[@]}" -c 'import uvicorn, app.main' >/dev/null 2>&1; then
   echo "ERROR: uvicorn is not installed in $PYTHON_BIN environment."
   echo "The application or its dependencies cannot be imported."
   echo "Try installing dependencies with: $PYTHON_BIN -m pip install -r requirements.txt"
@@ -71,7 +80,7 @@ if [ "$(uname -s)" = "Darwin" ] && command -v launchctl >/dev/null 2>&1; then
   mkdir -p "${LAUNCH_AGENTS_DIR}"
   : > "${LOG_FILE}"
 
-  "$PYTHON_BIN" - "$PLIST_FILE" "$PROJECT_DIR" "$PYTHON_BIN" "$HOST" "$PORT" "${OLLAMA_URL:-}" <<'PY'
+  "${PYTHON_CMD[@]}" - "$PLIST_FILE" "$PROJECT_DIR" "$PYTHON_BIN" "$HOST" "$PORT" "${OLLAMA_URL:-}" <<'PY'
 import plistlib
 import sys
 from pathlib import Path
