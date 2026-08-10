@@ -1,0 +1,15 @@
+# Python package requirements for the Gemi Brain project.
+# Note: face_recognition is required for deployed image-based perception.
+# Install prerequisites before running `pip install -r requirements.txt`.
+# Example (macOS): brew install cmake pkg-config libpng
+fastapi
+uvicorn
+httpx
+pydantic
+python-dotenv
+pytest
+pytest-asyncio
+setuptools
+numpy
+pillow
+face_recognition

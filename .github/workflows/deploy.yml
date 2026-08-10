@@ -1,0 +1,48 @@
+name: Deploy to Self-hosted Runner
+
+on:
+  workflow_run:
+    workflows:
+      - CI
+    types:
+      - completed
+  workflow_dispatch: # manual run available from the Actions page
+
+jobs:
+  deploy:
+    if: ${{ (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && (github.event.workflow_run.head_branch == 'develop' || github.event.workflow_run.head_branch == 'main')) || github.event_name == 'workflow_dispatch' }}
+    name: Deploy on self-hosted macOS runner
+    runs-on: [self-hosted, macos]
+    environment: production
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies using runner Python
+        run: |
+          if command -v python3 >/dev/null 2>&1; then
+            PYTHON=python3
+          elif command -v python >/dev/null 2>&1; then
+            PYTHON=python
+          else
+            echo "No usable Python interpreter found on runner" >&2
+            exit 1
+          fi
+          $PYTHON --version
+          $PYTHON -m venv .venv
+          source .venv/bin/activate
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+        shell: bash
+
+      - name: Configure environment
+        run: |
+          echo "HOST=${{ secrets.APP_HOST }}" > .env
+          echo "PORT=${{ secrets.APP_PORT }}" >> .env
+          echo "OLLAMA_URL=${{ secrets.OLLAMA_URL }}" >> .env
+          echo "APP_ENV=production" >> .env
+
+      - name: Restart Gemi Brain server
+        run: |
+          chmod +x scripts/restart_server.sh
+          ./scripts/restart_server.sh
