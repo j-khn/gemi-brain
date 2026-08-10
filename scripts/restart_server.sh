@@ -23,7 +23,30 @@ elif [ -z "$PYTHON_BIN" ]; then
   PYTHON_BIN="python"
 fi
 
-echo "Starting Gemi Brain on ${HOST}:${PORT}..."
-"$PYTHON_BIN" -m uvicorn app.main:app --host "${HOST}" --port "${PORT}" --reload &
+mkdir -p logs
+LOG_FILE="logs/gemi_brain.log"
 
-echo "Gemi Brain started with PID $!"
+cat <<EOF > /tmp/gemi_brain_env.txt
+HOST=${HOST}
+PORT=${PORT}
+APP_ENV=${APP_ENV}
+OLLAMA_URL=${OLLAMA_URL}
+EOF
+
+echo "Starting Gemi Brain on ${HOST}:${PORT}..."
+echo "Logs will be written to ${LOG_FILE}"
+nohup "$PYTHON_BIN" -m uvicorn app.main:app --host "${HOST}" --port "${PORT}" > "$LOG_FILE" 2>&1 &
+PID=$!
+disown "$PID"
+
+echo "Gemi Brain started with PID ${PID}"
+
+sleep 3
+if lsof -iTCP:${PORT} -sTCP:LISTEN -t >/dev/null 2>&1; then
+  echo "Process is listening on port ${PORT}."
+else
+  echo "ERROR: Process is not listening on port ${PORT}."
+  echo "Last 80 lines of log:"
+  tail -n 80 "$LOG_FILE" || true
+  exit 1
+fi
