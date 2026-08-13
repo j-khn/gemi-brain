@@ -38,13 +38,13 @@ def test_system_prompt_encourages_human_memory_and_feelings():
 
     assert "remember them the way a person would" in system
     assert "Check context the way a person would" in system
-    assert "trust those clearer moments" in system
     assert "Never say \"as an AI\"" in system or "as an AI" in system
     assert "my sensors" in system
     assert "Greet at most once" in system
-    assert "push back briefly" in system
-    assert "Do not invent a crisp answer" in system or "do not invent" in system.lower()
-    assert "third person" in system.lower() or "first person" in system.lower()
+    assert "Do NOT apologize" in system or "Do not apologize" in system.lower() or "do NOT apologize" in system
+    assert "picture is the primary truth" in system or "primary truth" in system
+    assert "literal short answers" in system or "Simple questions about color" in system
+    assert "first person" in system.lower()
 
 
 def test_ongoing_chat_does_not_force_a_greeting():
@@ -98,7 +98,7 @@ def test_no_current_image_still_keeps_past_memory():
     )
 
     assert "Cute dog!" in prompt
-    assert "Moments that stood out recently" in prompt
+    assert "Most recent visual tip" in prompt
     assert "Recent notes from earlier moments" in prompt
     assert "Stay grounded in what already happened" in prompt
     assert "Your eyes are closed" not in prompt

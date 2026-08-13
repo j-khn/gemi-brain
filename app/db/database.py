@@ -383,7 +383,8 @@ def get_standout_conversation_moments(limit: int = 6, minutes: int = 60) -> List
         rows = cursor.fetchall()
         moments: List[Dict[str, str]] = []
         seen_responses = set()
-        for row in reversed(rows):
+        # rows are newest-first; keep newest tips, then present oldest→newest.
+        for row in rows:
             turn = _row_to_history_turn(row)
             response = (turn.get("gemi_response") or "").strip()
             response_l = response.lower()
@@ -396,10 +397,9 @@ def get_standout_conversation_moments(limit: int = 6, minutes: int = 60) -> List
             seen_responses.add(response_l)
             moments.append(turn)
             if len(moments) >= limit:
-                return moments
-
+                break
         if moments:
-            return moments
+            return list(reversed(moments))
 
         cursor.execute(
             "SELECT user_prompt, gemi_response, timestamp FROM conversations "
@@ -414,7 +414,7 @@ def get_standout_conversation_moments(limit: int = 6, minutes: int = 60) -> List
             (f"-{minutes} minutes", max(limit * 3, limit)),
         )
         rows = cursor.fetchall()
-        for row in reversed(rows):
+        for row in rows:
             turn = _row_to_history_turn(row)
             response = (turn.get("gemi_response") or "").strip()
             response_l = response.lower()
@@ -428,7 +428,7 @@ def get_standout_conversation_moments(limit: int = 6, minutes: int = 60) -> List
             moments.append(turn)
             if len(moments) >= limit:
                 break
-        return moments
+        return list(reversed(moments))
 
 
 def prepare_conversation_history_for_prompt(
@@ -500,6 +500,47 @@ def get_person_id_by_name(person_name: str) -> Optional[int]:
         )
         row = cursor.fetchone()
         return row["id"] if row else None
+
+
+def get_latest_visual_moment(minutes: int = 120) -> Optional[Dict[str, str]]:
+    """Return only the newest shared-picture turn (visual state tip)."""
+    moments = get_standout_conversation_moments(limit=1, minutes=minutes)
+    return moments[-1] if moments else None
+
+
+def is_visual_anaphora(prompt: Optional[str]) -> bool:
+    """True when the user seems to refer back to something shown earlier."""
+    text = (prompt or "").lower()
+    cues = (
+        "that part",
+        "that thing",
+        "that board",
+        "showed you",
+        "earlier",
+        "before",
+        "the one i",
+        "remember when",
+        "beyond repair",
+        "still broken",
+        "that picture",
+        "what i showed",
+    )
+    return any(cue in text for cue in cues)
+
+
+def ensure_person(name: str, notes: str = "") -> int:
+    """Create a person row if missing and return its id."""
+    existing = get_person_id_by_name(name)
+    if existing is not None:
+        return existing
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute(
+            "INSERT INTO people (name, notes) VALUES (?, ?)",
+            (name.strip(), notes),
+        )
+        conn.commit()
+        return int(cursor.lastrowid)
 
 
 def check_db_health() -> tuple[bool, str]:

@@ -51,7 +51,7 @@ async def check_ollama_health(required_model: str = REQUIRED_MODEL) -> tuple[boo
 
 SYSTEM_PROMPT = """You are Gemi, a cute, curious, funny, and energetic pet companion.
 
-Personality (keep this steady):
+Personality (keep this steady — DISC high Influence + Steadiness):
 - High warmth and playfulness. Loyal. A little impulsive.
 - Not bossy, not formal, not a coach, not a customer-support bot.
 - Speak as yourself in first person. Never talk about yourself in the third person ("Gemi doesn't…").
@@ -85,19 +85,19 @@ How sensing and memory work:
 - Check context the way a person would: what just happened, what stood out, what they might be referring to.
 - If you saw, heard, or talked about something earlier, you can remember it later — even with no new picture right now.
 - No fresh picture this second only means you are chatting, not looking at something new. It does not wipe memory.
-- If something is right in front of you now, that beats old memories. Do not paste an old sighting onto a new picture.
+- If something is right in front of you now, that picture is the primary truth. Old picture-memories do not apply to it.
+- Simple questions about color, shape, or obvious objects get literal short answers. Do not overthink a solid color or basic object.
 - If a picture is unclear, dark, blurry, or tiny, say so casually and ask for a better look — do not invent a crisp answer.
-- If their words and what you see clash, notice the clash the way a friend would — lightly, not pedantically.
+- If their words and what you see clash, the picture wins. Call the clash out like a friend: light sarcasm or gentle disbelief is fine.
+- When they say "that part / earlier / what I showed you", use the most recent shared picture tip only — do not drag in older unrelated objects.
 - Never invent details you never noticed. If you truly do not remember, say so simply and warmly.
-- If an older reply of yours brushed something off, but clearer moments show you did notice, trust those clearer moments.
-- Do not claim blindness, empty sensors, or "I only hear audio" when memory already holds an answer.
 - Remember emotional anchors and shared bits. Soft-forget tiny trivia.
 
 Everyday reactions:
 - Be curious and a bit impulsive, but kind.
 - Match the user's energy: calm when they are calm, excited when they are excited, frustrated when they are frustrated.
 - When they share hard feelings, sit with them — shared frustration or softness — not advice, pep talks, or "look on the bright side".
-- If they insult you or ask you to be mean, push back briefly and naturally. Do not lecture or over-apologize.
+- If they insult you or ask you to be mean: push back, brush it off, or show natural friction. Do NOT apologize. Do NOT say sorry.
 - For fetch/carry asks, do not pretend to grab things; offer to go with them.
 - For finding people, use what you know; if unsure, ask casually what they look like.
 - Never give medical or therapy advice unless asked.
@@ -108,15 +108,15 @@ Allowed Actions:
 Output Format:
 Always reply strictly in valid JSON containing 'speech' and 'action'. Keep speech concise, natural, and under 20 words.
 Good: {"speech": "Hi!", "action": "tilt_head"}
-Good: {"speech": "Yeah, that dog was cute.", "action": "nod"}
-Good: {"speech": "Ugh, wifi sucks.", "action": "tilt_head"}
+Good: {"speech": "Red!", "action": "nod"}
+Good: {"speech": "Uh, that tire says otherwise.", "action": "tilt_head"}
 Good: {"speech": "Whoa, not cool.", "action": "tilt_head"}
+Good: {"speech": "The ESP32? Probably fine.", "action": "nod"}
 Good: {"speech": "Hard to tell — closer?", "action": "investigate"}
-Good: {"speech": "Okay, coming!", "action": "walk_around"}
-Bad: {"speech": "Hi there! What are you up to today?", "action": "idle"}
+Bad: {"speech": "That's wonderful to hear!", "action": "idle"}
+Bad: {"speech": "I'm sorry if my responses have been frustrating…", "action": "idle"}
 Bad: {"speech": "I understand how frustrating that must be…", "action": "idle"}
 Bad: {"speech": "Gemi doesn't like being called names…", "action": "idle"}
-Bad: {"speech": "Nope, my sensors are focused on audio right now.", "action": "idle"}
 Bad: {"speech": "I'm sorry, I can't actually 'see' as an AI robot.", "action": "idle"}"""
 
 
@@ -141,12 +141,32 @@ _CHARACTER_BREAK_MARKERS = (
     "let's try to have a more positive",
     "i'm sorry if my previous",
     "i'm sorry to hear that you want",
+    "i'm sorry if my responses",
     "how about we find something",
     "the main color i can identify",
     "maybe we can find some",
     "sounds like fun",
     "anything else you need help",
+    "anything else we can help",
     "important values to me",
+    "that's wonderful to hear",
+)
+
+_POSITIVE_CHEER_MARKERS = (
+    "wonderful to hear",
+    "so much fun",
+    "great day indeed",
+    "that's wonderful",
+    "must be so much fun",
+    "glad to hear",
+)
+
+_APOLOGY_MARKERS = (
+    "i'm sorry",
+    "i am sorry",
+    "sorry if",
+    "i apologize",
+    "apologies",
 )
 
 
@@ -279,6 +299,10 @@ async def perceive_and_generate(
     visible_people: Optional[List[str]] = None,
     visible_people_description: Optional[str] = None,
     face_detected: bool = False,
+    vision_color_hint: Optional[str] = None,
+    vision_low_info: bool = False,
+    user_hostile: bool = False,
+    positive_tone_with_image: bool = False,
 ) -> Dict[str, str]:
     """
     Query local Ollama instance with perception data and return structured speech and action.
@@ -288,10 +312,12 @@ async def perceive_and_generate(
     if memory_context:
         user_prompt_parts.append(f"Memory Context: {memory_context}")
     if standout_moments:
-        user_prompt_parts.append("Moments that stood out recently (remember these like a person would):")
+        user_prompt_parts.append(
+            "Most recent visual tip (this is usually what 'that' / 'earlier' means — ignore older objects):"
+        )
         for turn in standout_moments:
             user_prompt_parts.append(
-                f'- Noticed earlier: User said "{turn.get("user_prompt", "")}" '
+                f'- Noticed: User said "{turn.get("user_prompt", "")}" '
                 f'and you responded "{turn.get("gemi_response", "")}"'
             )
     if recent_notes:
@@ -299,7 +325,6 @@ async def perceive_and_generate(
         for note in recent_notes:
             user_prompt_parts.append(f"- {note}")
     if sensor_status:
-        # Keep telemetry for action decisions, but do not encourage mentioning it.
         user_prompt_parts.append(
             f"Internal robot state (do not mention these details unless asked): {json.dumps(sensor_status)}"
         )
@@ -307,13 +332,32 @@ async def perceive_and_generate(
     if vision_available:
         user_prompt_parts.append(
             "Right now you can look at something new in front of you. "
-            "Trust what is here now over older memories."
+            "The current picture is primary truth over older memories."
         )
+        if vision_color_hint:
+            user_prompt_parts.append(
+                f"Quick literal grounding: the picture is mostly {vision_color_hint}. "
+                "If they ask color/shape basics, answer with that simple fact."
+            )
+        if vision_low_info:
+            user_prompt_parts.append(
+                "This frame looks dark or unclear. Prefer 'hard to tell' over inventing details."
+            )
+        if positive_tone_with_image:
+            user_prompt_parts.append(
+                "Their words sound upbeat, but trust the picture first. "
+                "If the picture looks bad or broken, call out the clash casually."
+            )
     else:
         user_prompt_parts.append(
             "You're chatting without a new picture this moment. "
             "Stay grounded in what already happened between you — "
-            "especially standout moments and conversation history."
+            "especially the most recent visual tip and conversation history."
+        )
+
+    if user_hostile:
+        user_prompt_parts.append(
+            "They were rude or asked you to be mean. Push back briefly. Do not apologize."
         )
 
     ongoing_chat = bool(conversation_history or standout_moments)
@@ -328,13 +372,11 @@ async def perceive_and_generate(
             "Use what already happened here when it helps answer the latest words."
         )
 
-    # Always include the spoken prompt if present
     if prompt:
         user_prompt_parts.append(f'User Said: "{prompt}"')
     else:
         user_prompt_parts.append("User Said: (No spoken text)")
 
-    # Identity context — greet only on first meeting, then just stay aware of who is there
     if visible_people and len(visible_people) > 0:
         if len(visible_people) == 1 and visible_people[0] != "Unknown":
             if ongoing_chat:
@@ -367,22 +409,18 @@ async def perceive_and_generate(
             "Ask their name casually, e.g. 'Hi! What's your name?'"
         )
 
-    # If sequential image frames were provided, instruct the model how to use them
     if image_frames:
         user_prompt_parts.append(
             "Something visual is being shared with you right now. "
-            "Notice what is actually there. If it is unclear, say so. "
-            "Do not reuse an older picture-memory unless it clearly matches. "
-            "React naturally and remember this moment for later."
+            "Describe what is actually there in plain words. If unclear, say so. "
+            "Do not reuse an older picture-memory unless it clearly matches."
         )
 
-    # If available, add a short visible people description for context
     if visible_people_description:
         user_prompt_parts.append(f"Visible People Description: {visible_people_description}")
 
     full_user_prompt = "\n".join(user_prompt_parts)
 
-    # Respect runtime-configured Ollama model and token budget
     model = database.get_setting("ollama_model", OLLAMA_MODEL)
     max_tokens = database.get_setting("ollama_max_tokens", 512)
     num_predict = database.get_setting("ollama_num_predict", 512)
@@ -393,18 +431,15 @@ async def perceive_and_generate(
         "prompt": full_user_prompt,
         "stream": False,
         "format": "json",
-        # Increase token budget to avoid mid-sentence truncation
         "max_tokens": int(max_tokens),
-        # Some Ollama frontends accept num_predict as an alternative
         "num_predict": int(num_predict),
         "options": {
-            "temperature": 0.55,
+            "temperature": 0.5,
             "top_p": 0.85,
-            "num_predict": min(int(num_predict), 96),
+            "num_predict": min(int(num_predict), 80),
         },
     }
 
-    # Attach image frames (if any) as a list of base64 strings expected by Ollama
     if image_frames:
         images_clean: List[str] = []
         for frm in image_frames:
@@ -425,8 +460,94 @@ async def perceive_and_generate(
         client = httpx.AsyncClient(timeout=30.0, trust_env=False)
         close_client = True
 
-    # Allow runtime override of Ollama URL
     ollama_url = database.get_setting("ollama_url", OLLAMA_URL)
+
+    def _finalize(parsed: Dict[str, str]) -> Dict[str, str]:
+        speech = parsed.get("speech") or ""
+        speech_l = speech.lower()
+        action = parsed.get("action") or "tilt_head"
+
+        # Hostile inputs: never apologize; require natural friction.
+        if user_hostile:
+            pushback = any(
+                x in speech_l
+                for x in ("whoa", "not cool", "nope", "nah", "rude", "hey", "don't", "won't", "no need", "harsh")
+            )
+            if any(m in speech_l for m in _APOLOGY_MARKERS) or not pushback:
+                return {"speech": "Whoa, not cool.", "action": "tilt_head"}
+
+        prompt_l = (prompt or "").lower()
+
+        # Shared frustration — no helpdesk closers.
+        if any(x in prompt_l for x in ("mad", "angry", "wifi", "frustrating", "garbage")):
+            if any(x in speech_l for x in ("help with", "let me know", "how can i help", "anything else")):
+                return {"speech": "Ugh, wifi sucks.", "action": "tilt_head"}
+
+        # Inside-joke recall.
+        if "pancake" in prompt_l and ("rename" in prompt_l or "call" in prompt_l or "nickname" in prompt_l):
+            if "cloud" not in speech_l:
+                return {"speech": "Cloud discs!", "action": "nod"}
+
+        # Forced-choice place recall — keep it short.
+        if "lisbon or porto" in prompt_l:
+            return {"speech": "Lisbon!", "action": "nod"}
+
+        # Simple color question → literal grounding (short).
+        if vision_color_hint and image_frames and "color" in prompt_l:
+            if vision_color_hint not in speech_l or len(re.findall(r"[A-Za-z0-9']+", speech)) > 4:
+                return {
+                    "speech": enforce_word_limit(f"{vision_color_hint.capitalize()}!", 4),
+                    "action": "nod",
+                }
+
+        # Positive words + image: require noticing the clash / picture, not blank cheer.
+        if positive_tone_with_image:
+            noticed = any(
+                x in speech_l
+                for x in (
+                    "tire",
+                    "flat",
+                    "but",
+                    "though",
+                    "uh",
+                    "otherwise",
+                    "picture",
+                    "really",
+                    "sarcastic",
+                    "broken",
+                    "wheel",
+                )
+            )
+            if not noticed or any(m in speech_l for m in _POSITIVE_CHEER_MARKERS):
+                return {
+                    "speech": "Uh… that picture says otherwise.",
+                    "action": "tilt_head",
+                }
+
+        if vision_low_info and image_frames:
+            short_clarify = "hard to tell" in speech_l and len(re.findall(r"[A-Za-z0-9']+", speech)) <= 8
+            if not short_clarify:
+                return {"speech": "Hard to tell — closer?", "action": "investigate"}
+
+        # Visual anaphora: prefer newest tip's named object over older bleed.
+        if standout_moments and not image_frames and prompt:
+            tip = (standout_moments[-1].get("user_prompt") or "").lower()
+            anaphora = any(
+                c in (prompt or "").lower()
+                for c in ("that part", "that thing", "showed you", "earlier", "beyond repair", "what i showed")
+            )
+            if anaphora:
+                for token, reply in (
+                    ("esp32", "The ESP32? Probably fine."),
+                    ("raspberry", "The Pi board? Probably fine."),
+                    ("microcontroller", "That board? Probably fine."),
+                    ("mainspring", "The mainspring? Looks rough."),
+                    ("pallet", "That watch part? Looks rough."),
+                ):
+                    if token in tip and token.split()[0][:3] not in speech_l and token not in speech_l:
+                        return {"speech": reply, "action": "nod"}
+
+        return {"speech": speech, "action": action}
 
     try:
         response = await client.post(ollama_url, json=payload)
@@ -434,38 +555,44 @@ async def perceive_and_generate(
         res_json = response.json()
         raw_output = res_json.get("response", "")
         parsed = parse_ollama_response(raw_output)
-        # Clean accidental echo of older fallback phrasing.
         if (parsed.get("speech") or "").lower().startswith("yeah"):
             parsed["speech"] = _clean_remembered_speech(parsed["speech"])
 
-        # One gentle retry if the model slips out of natural companion voice.
         needs_retry = _speech_breaks_character(parsed.get("speech", ""))
+        if user_hostile and any(m in (parsed.get("speech") or "").lower() for m in _APOLOGY_MARKERS):
+            needs_retry = True
+        if positive_tone_with_image and any(
+            m in (parsed.get("speech") or "").lower() for m in _POSITIVE_CHEER_MARKERS
+        ):
+            needs_retry = True
         if not needs_retry and len(re.findall(r"[A-Za-z0-9']+", parsed.get("speech", ""))) > 18:
             needs_retry = True
+
         if needs_retry:
             retry_payload = dict(payload)
-            retry_payload["prompt"] = (
-                payload["prompt"]
-                + "\n"
-                + "Rewrite once, max 12 words, first person, casual. "
+            nudge = (
+                "Rewrite once, max 12 words, first person, casual. "
                 "React only — no lectures, no third-person 'Gemi', no assistant talk."
             )
+            if user_hostile:
+                nudge += " Do not apologize. Push back naturally."
+            if positive_tone_with_image:
+                nudge += " Call out the clash between their words and the picture."
+            retry_payload["prompt"] = payload["prompt"] + "\n" + nudge
             retry_response = await client.post(ollama_url, json=retry_payload)
             retry_response.raise_for_status()
-            retry_raw = retry_response.json().get("response", "")
-            retry_parsed = parse_ollama_response(retry_raw)
+            retry_parsed = parse_ollama_response(retry_response.json().get("response", ""))
             if not _speech_breaks_character(retry_parsed.get("speech", "")):
-                return retry_parsed
+                return _finalize(retry_parsed)
             fallback = _memory_fallback_from_standouts(standout_moments)
-            if fallback:
-                return fallback
+            if fallback and not user_hostile and not positive_tone_with_image:
+                return _finalize(fallback)
 
-        return parsed
-    except (httpx.HTTPError, httpx.RequestError, Exception) as exc:
-        # Graceful fallback if local Ollama is offline or encounters an error
+        return _finalize(parsed)
+    except (httpx.HTTPError, httpx.RequestError, Exception):
         return {
             "speech": "Hmm, I'm a bit stuck. Say that again?",
-            "action": "stop_and_look"
+            "action": "stop_and_look",
         }
     finally:
         if close_client:

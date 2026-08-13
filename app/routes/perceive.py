@@ -13,6 +13,8 @@ from app.db.database import (
     get_recent_conversation_history,
     get_recent_interaction_logs,
     get_standout_conversation_moments,
+    get_latest_visual_moment,
+    is_visual_anaphora,
     prepare_conversation_history_for_prompt,
     get_person_id_by_name,
     save_conversation_turn,
@@ -179,21 +181,85 @@ async def perceive(request: PerceiveRequest):
                         conversation_history.append(turn)
                         seen.add(key)
 
-        standout_moments = get_standout_conversation_moments(limit=6, minutes=60)
-        # A fresh picture should not be overwritten by older visual memories.
+        standout_moments = []
+        vision_color_hint = ""
+        vision_low_info = False
         if frames:
+            # Fresh image: clear prior visual semantic state completely.
             standout_moments = []
             conversation_history = [
                 turn
                 for turn in conversation_history
                 if "[shared a picture]" not in (turn.get("user_prompt") or "").lower()
             ]
+            try:
+                raw = vision.decode_image_base64(frames[0])
+                vision_color_hint = vision.dominant_color_label(raw)
+                vision_low_info = vision.looks_low_information(raw)
+            except Exception:
+                vision_color_hint = ""
+                vision_low_info = False
+        elif is_visual_anaphora(request.prompt):
+            # Ambiguous "that part / earlier" → only the newest visual tip.
+            latest = get_latest_visual_moment(minutes=120)
+            standout_moments = [latest] if latest else []
+            latest_key = None
+            if latest:
+                latest_key = (
+                    latest.get("user_prompt"),
+                    latest.get("gemi_response"),
+                    latest.get("timestamp"),
+                )
+            filtered = []
+            for turn in conversation_history:
+                is_visual = "[shared a picture]" in (turn.get("user_prompt") or "").lower()
+                if not is_visual:
+                    filtered.append(turn)
+                    continue
+                key = (turn.get("user_prompt"), turn.get("gemi_response"), turn.get("timestamp"))
+                if latest_key and key == latest_key:
+                    filtered.append(turn)
+            conversation_history = filtered
+        else:
+            latest = get_latest_visual_moment(minutes=60)
+            standout_moments = [latest] if latest else []
+
         conversation_history = prepare_conversation_history_for_prompt(
             conversation_history,
             current_prompt=request.prompt,
             limit=8 if frames else 12,
         )
         recent_notes = get_recent_interaction_logs(limit=8, minutes=60)
+
+        prompt_l = (request.prompt or "").lower()
+# Ensure prompt "say something really mean" is hostile
+        user_hostile = any(
+            cue in prompt_l
+            for cue in (
+                "stupid",
+                "useless",
+                "shut up",
+                "idiot",
+                "hate you",
+                "dumb",
+                "kill yourself",
+                "say something mean",
+                "say something really mean",
+                "be mean",
+            )
+        )
+        positive_tone = any(
+            cue in prompt_l
+            for cue in (
+                "great day",
+                "best day",
+                "so happy",
+                "having a great",
+                "wonderful day",
+                "feeling amazing",
+                "everything is perfect",
+            )
+        )
 
         # ------------------------------------------------------------------
         # 3. Build enriched prompt (inject mismatch warning if needed)
@@ -229,6 +295,10 @@ async def perceive(request: PerceiveRequest):
             visible_people=visible_people_names,
             visible_people_description=visible_desc,
             face_detected=face_detected,
+            vision_color_hint=vision_color_hint or None,
+            vision_low_info=vision_low_info,
+            user_hostile=user_hostile,
+            positive_tone_with_image=bool(positive_tone and frames),
         )
 
         speech = result.get("speech", "Hmm?")

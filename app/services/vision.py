@@ -134,3 +134,47 @@ def match_face(
                 best_match = (person_id, name, cos, euc)
 
     return best_match
+
+
+def dominant_color_label(image_bytes: bytes) -> str:
+    """Return a simple everyday color word for the image's average color."""
+    try:
+        from PIL import Image
+    except ImportError:
+        return ""
+
+    image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+    image = image.resize((32, 32))
+    pixels = list(image.getdata())
+    if not pixels:
+        return ""
+    r = sum(p[0] for p in pixels) / len(pixels)
+    g = sum(p[1] for p in pixels) / len(pixels)
+    b = sum(p[2] for p in pixels) / len(pixels)
+    mx = max(r, g, b)
+    mn = min(r, g, b)
+    if mx < 40:
+        return "black"
+    if mn > 210:
+        return "white"
+    if mx - mn < 25:
+        if mx < 100:
+            return "gray"
+        return "white" if mx > 160 else "gray"
+    if r >= g and r >= b:
+        return "red" if r > 90 else "brown"
+    if g >= r and g >= b:
+        return "green"
+    return "blue"
+
+
+def looks_low_information(image_bytes: bytes) -> bool:
+    """Heuristic: very dark / low-contrast frames are ambiguous to a person."""
+    try:
+        from PIL import Image
+        import numpy as np
+    except ImportError:
+        return False
+    image = Image.open(io.BytesIO(image_bytes)).convert("L").resize((32, 32))
+    arr = np.asarray(image, dtype=np.float32)
+    return float(arr.mean()) < 35 or float(arr.std()) < 12
