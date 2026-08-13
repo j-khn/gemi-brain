@@ -11,6 +11,7 @@ from app.db.database import (
     get_conversation_history,
     get_conversation_history_by_query,
     get_recent_conversation_history,
+    get_recent_interaction_logs,
     get_person_id_by_name,
     save_conversation_turn,
     save_interaction_log,
@@ -155,17 +156,28 @@ async def perceive(request: PerceiveRequest):
         else:
             memory_context = ""
 
-        # Conversation history: aggregate histories for visible people if available, else fall back to recent
+        # Conversation history: keep recent continuity; enrich with related older turns
         conversation_history = []
         if person_ids:
             for pid in person_ids:
-                conversation_history.extend(get_conversation_history(pid, limit=5))
+                conversation_history.extend(get_conversation_history(pid, limit=8))
         if not conversation_history:
-            conversation_history = get_recent_conversation_history(limit=10, minutes=10)
-            if request.prompt:
-                query_history = get_conversation_history_by_query(request.prompt, limit=10)
-                if query_history:
-                    conversation_history = query_history
+            conversation_history = get_recent_conversation_history(limit=12, minutes=60)
+        if request.prompt:
+            query_history = get_conversation_history_by_query(request.prompt, limit=6)
+            if query_history:
+                # Merge without replacing the recent thread.
+                seen = {
+                    (turn.get("user_prompt"), turn.get("gemi_response"), turn.get("timestamp"))
+                    for turn in conversation_history
+                }
+                for turn in query_history:
+                    key = (turn.get("user_prompt"), turn.get("gemi_response"), turn.get("timestamp"))
+                    if key not in seen:
+                        conversation_history.append(turn)
+                        seen.add(key)
+
+        recent_notes = get_recent_interaction_logs(limit=8, minutes=60)
 
         # ------------------------------------------------------------------
         # 3. Build enriched prompt (inject mismatch warning if needed)
@@ -193,6 +205,7 @@ async def perceive(request: PerceiveRequest):
             prompt=enriched_prompt or request.prompt,
             image_frames=frames or None,
             memory_context=memory_context,
+            recent_notes=recent_notes or None,
             sensor_status=request.sensor_status,
             conversation_history=conversation_history,
             vision_available=vision_available,
@@ -207,7 +220,11 @@ async def perceive(request: PerceiveRequest):
         # ------------------------------------------------------------------
         # 5. Log interaction
         # ------------------------------------------------------------------
-        prompt_summary = request.prompt or "Visual/Sensor input"
+        prompt_summary = request.prompt or ("Shared a picture" if frames else "Just hanging out")
+        if frames and request.prompt:
+            prompt_summary = f"{request.prompt} [shared a picture]"
+        elif frames and not request.prompt:
+            prompt_summary = "Shared a picture"
         save_interaction_log(f"Prompt: {prompt_summary} -> Speech: '{speech}' | Action: {action}")
         # Save conversation turn for each recognized person (associate with None for unknowns)
         if person_ids:

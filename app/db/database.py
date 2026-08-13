@@ -190,6 +190,21 @@ def save_interaction_log(event_summary: str) -> int:
         return cursor.lastrowid
 
 
+def get_recent_interaction_logs(limit: int = 8, minutes: int = 30) -> List[str]:
+    """Return recent interaction log summaries, oldest first."""
+    if minutes <= 0:
+        minutes = 30
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT event_summary FROM logs "
+            "WHERE timestamp >= datetime('now', ?) ORDER BY timestamp DESC LIMIT ?",
+            (f"-{minutes} minutes", limit),
+        )
+        rows = cursor.fetchall()
+        return [row["event_summary"] for row in reversed(rows)]
+
+
 def save_conversation_turn(person_id: Optional[int], user_prompt: str, gemi_response: str) -> int:
     """Save one conversation turn into the conversations table."""
     with get_db_connection() as conn:
