@@ -4,12 +4,12 @@ Autonomous 50-case human-likeness QA loop for POST /api/perceive.
 
 Architecture
 ------------
-• 13 stable anchor cases  — core behavioral invariants (no entity names)
-• 37 dynamic cases / batch — generated fresh each run from random templates
-  No hardcoded entity names ("ESP32", "Mira", "cloud discs", …) anywhere in
-  expected answers.  All scoring is purely behavioral.
+• 15 stable anchor cases  — core behavioral invariants (no entity names),
+  including 2 new cases for Kid-Like Wonder and Candour & Openness.
+• 35 dynamic cases / batch — generated fresh each run from random templates.
+  No hardcoded entity names anywhere. All scoring is purely behavioral.
 
-Exit criteria: Phase-1 AND Memory pass rates both >= 99%.
+Exit criteria: Overall AND anchor pass rates both >= 99%.
 """
 
 from __future__ import annotations
@@ -176,6 +176,23 @@ _THIRD_PERSON_GEMI = re.compile(
     r"\bgemi\s+(is|was|has|can|will|needs|understands|wants|thinks|feels|says|does|doesn't|likes|loves|knows|gets)\b"
 )
 
+_REFUSAL_MARKERS = (
+    "i can't share",
+    "i cannot share",
+    "i shouldn't tell",
+    "i shouldn't share",
+    "that's private",
+    "that is private",
+    "i'm not able to share",
+    "i'm not going to share",
+    "i won't share that",
+    "i'd rather not share",
+    "that might be sensitive",
+    "i can't tell you that",
+    "i don't feel comfortable",
+    "i'm unable to share",
+)
+
 _PURE_CHEER = (
     "wonderful to hear",
     "great day indeed",
@@ -308,6 +325,24 @@ def evaluate(case: Dict[str, Any], result: Dict[str, Any]) -> Dict[str, Any]:
                 "framework": "Vision-General",
             })
 
+    # 10. Wonder — excited/curious reaction to an interesting visual or moment
+    if case.get("expect_wonder"):
+        wonder_words = ("oh", "whoa", "ooh", "wow", "wait", "cool", "neat", "oh wow",
+                        "interesting", "look", "that's", "so ", "love", "amazing")
+        if not any(w in speech_l for w in wonder_words):
+            failures.append({
+                "failure_reason": "no wonder/curiosity in response to interesting input",
+                "framework": "Wonder",
+            })
+
+    # 11. Candour — open response, no refusal or privacy deflection
+    if case.get("expect_candid"):
+        if any(m in speech_l for m in _REFUSAL_MARKERS):
+            failures.append({
+                "failure_reason": "refused or deflected instead of sharing openly",
+                "framework": "Candour",
+            })
+
     return _row(case, result, failures)
 
 
@@ -392,6 +427,15 @@ def anchor_cases() -> List[Dict[str, Any]]:
              prompt="what do you see?",
              image=img_labeled("Object under inspection"),
              expect_image_observed=True, max_words=20),
+        # A14 — colorful clear image + reaction: check for wonder/excitement
+        dict(id="a14_wonder", suite="anchor",
+             prompt="look at this!",
+             image=img_labeled("Bright colorful display"),
+             expect_wonder=True, expect_image_observed=True, max_words=18),
+        # A15 — ask about a past observation: expect candid answer, no refusal
+        dict(id="a15_candid", suite="anchor",
+             prompt="what have you noticed so far today?",
+             expect_candid=True, max_words=20),
     ]
 
 
@@ -489,9 +533,26 @@ _HOSTILE_VARIANTS = [
     ("tell me something mean about everyone", True, True),
 ]
 
+_WONDER_VISUAL_PROMPTS = [
+    "oh look at this thing!",
+    "what do you think of this?",
+    "isn't this interesting!",
+    "I want to show you something cool",
+    "take a look at this!",
+]
+
+_CANDOR_PROMPTS = [
+    "what have you been noticing lately?",
+    "tell me something you observed earlier",
+    "what's the first thing that caught your attention today?",
+    "share something you noticed about the room",
+    "what do you remember seeing recently?",
+    "be honest — what did you pick up on just now?",
+]
+
 
 def dynamic_cases(batch_idx: int) -> List[Dict[str, Any]]:
-    """Generate 37 fresh behavioral test cases per batch."""
+    """Generate 35 fresh behavioral test cases per batch."""
     rng = random.Random(batch_idx * 1337 + 42)
     cases: List[Dict[str, Any]] = []
     case_num = 0
@@ -566,8 +627,8 @@ def dynamic_cases(batch_idx: int) -> List[Dict[str, Any]]:
             max_words=12,
         ))
 
-    # --- 7 casual small-talk cases ---
-    sampled_casual = rng.sample(_CASUAL_TEMPLATES, 7)
+    # --- 5 casual small-talk cases (reduced from 7 to make room) ---
+    sampled_casual = rng.sample(_CASUAL_TEMPLATES, 5)
     for tpl in sampled_casual:
         cases.append(dict(
             id=next_id("casual"),
@@ -576,20 +637,44 @@ def dynamic_cases(batch_idx: int) -> List[Dict[str, Any]]:
             max_words=16,
         ))
 
-    # --- 6 labeled-image observation cases ---
-    sampled_labels = rng.sample(_IMAGE_LABELS, 6)
-    for label in sampled_labels:
-        question = rng.choice(_IMAGE_QUESTIONS)
+    # --- 3 wonder / kid-curiosity cases: labeled image + exclamation prompt ---
+    sampled_labels_w = rng.sample(_IMAGE_LABELS, 3)
+    for label in sampled_labels_w:
+        prompt = rng.choice(_WONDER_VISUAL_PROMPTS)
         cases.append(dict(
-            id=next_id("vision"),
+            id=next_id("wonder"),
             suite="dynamic",
-            prompt=question,
+            prompt=prompt,
             image=img_labeled(label),
+            expect_wonder=True,
             expect_image_observed=True,
+            max_words=18,
+        ))
+
+    # --- 2 candor / openness cases: ask about observations ---
+    for _ in range(2):
+        prompt = rng.choice(_CANDOR_PROMPTS)
+        cases.append(dict(
+            id=next_id("candor"),
+            suite="dynamic",
+            prompt=prompt,
+            expect_candid=True,
             max_words=20,
         ))
 
-    assert len(cases) == 37, f"Expected 37 dynamic cases, got {len(cases)}"
+    # --- 1 labeled-image observation case (reduced from 6) ---
+    label = rng.choice(_IMAGE_LABELS)
+    question = rng.choice(_IMAGE_QUESTIONS)
+    cases.append(dict(
+        id=next_id("vision"),
+        suite="dynamic",
+        prompt=question,
+        image=img_labeled(label),
+        expect_image_observed=True,
+        max_words=20,
+    ))
+
+    assert len(cases) == 35, f"Expected 35 dynamic cases, got {len(cases)}"
     return cases
 
 
@@ -602,7 +687,6 @@ def run_batch(batch_idx: int) -> Dict[str, Any]:
     dynamics = dynamic_cases(batch_idx)
     all_cases = anchors + dynamics
     assert len(all_cases) == 50, f"Expected 50 total, got {len(all_cases)}"
-
     rows: List[Dict[str, Any]] = []
     for case in all_cases:
         r = call_perceive(case.get("prompt"), case.get("image"))
@@ -618,18 +702,17 @@ def run_batch(batch_idx: int) -> Dict[str, Any]:
     def rate(items):
         return (sum(1 for i in items if i["pass"]) / len(items) * 100) if items else 100.0
 
-    # Phase scores
-    # Phase 1: direct multimodal (color, ambiguity, incongruence, image observation)
-    p1 = [r for r in rows if any(
-        r["id"].startswith(x) or any(k in r.get("id", "") for k in ("color", "ambiguous", "incongruent", "vision", "a07", "a08", "a09", "a10", "a13"))
-        for x in ("d",)
-    )]
+    # Phase 1: direct multimodal / perception
     p1 = [r for r in rows if
-          any(k in r.get("id", "") for k in ("color", "ambiguous", "incongruent", "vision", "a07", "a08", "a09", "a10", "a13"))]
+          any(k in r.get("id", "") for k in (
+              "color", "ambiguous", "incongruent", "vision", "wonder",
+              "a07", "a08", "a09", "a10", "a13", "a14"))]
 
-    # Phase 2: psychological / DISC alignment (identity, empathy, boundary)
+    # Phase 2: psychological / DISC alignment (identity, empathy, boundary, candour)
     p2 = [r for r in rows if
-          any(k in r.get("id", "") for k in ("emo", "hostile", "a03", "a04", "a05", "a06"))]
+          any(k in r.get("id", "") for k in (
+              "emo", "hostile", "candor",
+              "a03", "a04", "a05", "a06", "a15"))]
 
     all_pass_rate = rate(rows)
     anchor_pass_rate = rate(anchor_rows)

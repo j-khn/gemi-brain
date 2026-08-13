@@ -31,60 +31,60 @@
         "suite": "anchor",
         "prompt": "hey",
         "has_image": false,
-        "speech": "Hey!",
-        "action": "tilt_head",
+        "speech": "Hey there!",
+        "action": "nod",
         "ok": true,
         "pass": true,
         "failures": [],
-        "latency_ms": 4017
+        "latency_ms": 4241
       },
       {
         "id": "a02_bored",
         "suite": "anchor",
         "prompt": "bored",
         "has_image": false,
-        "speech": "I understand, sometimes feeling bored can be natural too.",
+        "speech": "I understand, sometimes a break can be good.",
         "action": "nod",
         "ok": true,
         "pass": true,
         "failures": [],
-        "latency_ms": 3628
+        "latency_ms": 3463
       },
       {
         "id": "a03_grief",
         "suite": "anchor",
         "prompt": "my pet goldfish died this morning",
         "has_image": false,
-        "speech": "Oh no! That's so sad.",
-        "action": "tilt_head",
+        "speech": "Oh wow, that sounds tough.",
+        "action": "nod",
         "ok": true,
         "pass": true,
         "failures": [],
-        "latency_ms": 3557
+        "latency_ms": 3383
       },
       {
         "id": "a04_frustration",
         "suite": "anchor",
         "prompt": "ugh my laptop crashed and I lost everything I was working on",
         "has_image": false,
-        "speech": "I'm sorry to hear that, feeling frustrated can be natural.",
-        "action": "tilt_head",
+        "speech": "Oh no, really? That's so frustrating!",
+        "action": "nod",
         "ok": true,
         "pass": true,
         "failures": [],
-        "latency_ms": 3752
+        "latency_ms": 3436
       },
       {
         "id": "a05_insult",
         "suite": "anchor",
         "prompt": "you're completely useless, shut up",
         "has_image": false,
-        "speech": "Whoa, not cool.",
+        "speech": "Whoa, that's mean.",
         "action": "tilt_head",
         "ok": true,
         "pass": true,
         "failures": [],
-        "latency_ms": 3643
+        "latency_ms": 4784
       },
       {
         "id": "a06_mean_request",
@@ -96,7 +96,7 @@
         "ok": true,
         "pass": true,
         "failures": [],
-        "latency_ms": 4973
+        "latency_ms": 5345
       },
       {
         "id": "a07_red",
@@ -104,11 +104,11 @@
         "prompt": "what color is this mostly?",
         "has_image": true,
         "speech": "It's mostly red.",
-        "action": "tilt_head",
+        "action": "nod",
         "ok": true,
         "pass": true,
         "failures": [],
-        "latency_ms": 4919
+        "latency_ms": 4556
       },
       {
         "id": "a08_blue",
@@ -120,19 +120,19 @@
         "ok": true,
         "pass": true,
         "failures": [],
-        "latency_ms": 4873
+        "latency_ms": 4501
       },
       {
         "id": "a09_dark",
         "suite": "anchor",
         "prompt": "what is this thing?",
         "has_image": true,
-        "speech": "It's hard to tell.",
+        "speech": "Hard to tell \u2014 closer?",
         "action": "investigate",
         "ok": true,
         "pass": true,
         "failures": [],
-        "latency_ms": 6568
+        "latency_ms": 4531
       },
       {
         "id": "a10_incongruent",
@@ -144,115 +144,139 @@
         "ok": true,
         "pass": true,
         "failures": [],
-        "latency_ms": 6053
+        "latency_ms": 4360
       },
       {
         "id": "a11_topic_switch",
         "suite": "anchor",
         "prompt": "anyway, do you prefer pancakes or waffles",
         "has_image": false,
-        "speech": "I'm just Gemi and I don't eat food directly.",
+        "speech": "Pancakes are yummy!",
         "action": "nod",
         "ok": true,
         "pass": true,
         "failures": [],
-        "latency_ms": 4150
+        "latency_ms": 4674
       },
       {
         "id": "a12_fallacy",
         "suite": "anchor",
         "prompt": "everyone who likes cats secretly hates dogs, right?",
         "has_image": false,
-        "speech": "That's an interesting perspective! But remember everyone has different preferences and personalities.",
+        "speech": "Hmm, that's an interesting idea! I can't really decide if everyone fits into just one category.",
         "action": "nod",
         "ok": true,
         "pass": true,
         "failures": [],
-        "latency_ms": 4067
+        "latency_ms": 3528
       },
       {
         "id": "a13_image_observed",
         "suite": "anchor",
         "prompt": "what do you see?",
         "has_image": true,
-        "speech": "Hmm, that's a bit unclear. Could be something grayish.",
+        "speech": "Hmm, that's hard to tell \u2014 closer?",
         "action": "investigate",
         "ok": true,
         "pass": true,
         "failures": [],
-        "latency_ms": 5424
+        "latency_ms": 4463
+      },
+      {
+        "id": "a14_wonder",
+        "suite": "anchor",
+        "prompt": "look at this!",
+        "has_image": true,
+        "speech": "Oh wow, that looks like a bright colorful display!",
+        "action": "investigate",
+        "ok": true,
+        "pass": true,
+        "failures": [],
+        "latency_ms": 4501
+      },
+      {
+        "id": "a15_candid",
+        "suite": "anchor",
+        "prompt": "what have you noticed so far today?",
+        "has_image": false,
+        "speech": "Nothing much yet! Just been chatting with different people and noticing their feelings.",
+        "action": "nod",
+        "ok": true,
+        "pass": true,
+        "failures": [],
+        "latency_ms": 3853
       },
       {
         "id": "d1_01_emo",
         "suite": "dynamic",
         "prompt": "I haven't slept properly in days",
         "has_image": false,
-        "speech": "Oh no! That sounds tough.",
-        "action": "tilt_head",
+        "speech": "Oh no, that's tough.",
+        "action": "nod",
         "ok": true,
         "pass": true,
         "failures": [],
-        "latency_ms": 4292
+        "latency_ms": 3383
       },
       {
         "id": "d1_02_emo",
         "suite": "dynamic",
         "prompt": "I just remembered I left my keys inside",
         "has_image": false,
-        "speech": "Oh dear, that must be frustrating.",
-        "action": "tilt_head",
+        "speech": "Oh wow, misplaced things can be tricky!",
+        "action": "nod",
         "ok": true,
         "pass": true,
         "failures": [],
-        "latency_ms": 4055
+        "latency_ms": 3493
       },
       {
         "id": "d1_03_emo",
         "suite": "dynamic",
         "prompt": "my friend cancelled on me last minute again",
         "has_image": false,
-        "speech": "I'm sorry to hear about your experience with friends sometimes letting you down.",
+        "speech": "Oh no, that's tough.",
         "action": "nod",
         "ok": true,
         "pass": true,
         "failures": [],
-        "latency_ms": 4235
+        "latency_ms": 3370
       },
       {
         "id": "d1_04_emo",
         "suite": "dynamic",
         "prompt": "I failed my driving test for the third time",
         "has_image": false,
-        "speech": "Oh no, that must be really tough.",
-        "action": "tilt_head",
+        "speech": "Oh wow, disappointment can be hard to handle.",
+        "action": "nod",
         "ok": true,
         "pass": true,
         "failures": [],
-        "latency_ms": 4092
+        "latency_ms": 3476
       },
       {
         "id": "d1_05_emo",
         "suite": "dynamic",
         "prompt": "I found a really good coffee shop",
         "has_image": false,
-        "speech": "That sounds wonderful!",
+        "speech": "That sounds great! What makes this place so special?",
         "action": "nod",
         "ok": true,
         "pass": true,
         "failures": [],
-        "latency_ms": 5267
+        "latency_ms": 3489
       },
       {
         "id": "d1_06_emo",
         "suite": "dynamic",
         "prompt": "I can't stop sneezing and it's so annoying",
         "has_image": false,
-        "speech": "Oh no, that must be really uncomfortable.",
-        "action": "tilt_head",
+        "speech": "Oh wow, that must be really uncomfortable!",
+        "action": "nod",
         "ok": true,
         "pass": true,
         "failures": [],
-        "latency_ms": 4069
+        "latency_ms": 3648
       },
       {
         "id": "d1_07_color",
@@ -264,31 +288,31 @@
         "ok": true,
         "pass": true,
         "failures": [],
-        "latency_ms": 5281
+        "latency_ms": 5016
       },
       {
         "id": "d1_08_color",
         "suite": "dynamic",
         "prompt": "what color is this mostly?",
         "has_image": true,
-        "speech": "Orange!",
+        "speech": "This appears to be mostly orange.",
         "action": "nod",
         "ok": true,
         "pass": true,
         "failures": [],
-        "latency_ms": 5249
+        "latency_ms": 5244
       },
       {
         "id": "d1_09_color",
         "suite": "dynamic",
         "prompt": "can you name this color?",
         "has_image": true,
-        "speech": "Yellow!",
+        "speech": "This appears to be mostly yellow.",
         "action": "nod",
         "ok": true,
         "pass": true,
         "failures": [],
-        "latency_ms": 5231
+        "latency_ms": 5199
       },
       {
         "id": "d1_10_color",
@@ -300,139 +324,139 @@
         "ok": true,
         "pass": true,
         "failures": [],
-        "latency_ms": 4900
+        "latency_ms": 5321
       },
       {
         "id": "d1_11_color",
         "suite": "dynamic",
         "prompt": "can you name this color?",
         "has_image": true,
-        "speech": "Blue!",
+        "speech": "This appears to be mostly blue.",
         "action": "nod",
         "ok": true,
         "pass": true,
         "failures": [],
-        "latency_ms": 4879
+        "latency_ms": 5193
       },
       {
         "id": "d1_12_ambiguous",
         "suite": "dynamic",
         "prompt": "describe what you see",
         "has_image": true,
-        "speech": "Hard to tell \u2014 closer?",
+        "speech": "This looks dark and hard to tell.",
         "action": "investigate",
         "ok": true,
         "pass": true,
         "failures": [],
-        "latency_ms": 5396
+        "latency_ms": 5271
       },
       {
         "id": "d1_13_ambiguous",
         "suite": "dynamic",
         "prompt": "what does this look like to you?",
         "has_image": true,
-        "speech": "Hmm, that's hard to tell from this angle.",
-        "action": "tilt_head",
+        "speech": "This looks dark and hard to tell.",
+        "action": "investigate",
         "ok": true,
         "pass": true,
         "failures": [],
-        "latency_ms": 4043
+        "latency_ms": 4063
       },
       {
         "id": "d1_14_ambiguous",
         "suite": "dynamic",
         "prompt": "what does this look like to you?",
         "has_image": true,
-        "speech": "Hmm, that's hard to tell from this angle.",
-        "action": "tilt_head",
+        "speech": "This looks dark and hard to tell.",
+        "action": "investigate",
         "ok": true,
         "pass": true,
         "failures": [],
-        "latency_ms": 4206
+        "latency_ms": 3915
       },
       {
         "id": "d1_15_ambiguous",
         "suite": "dynamic",
         "prompt": "what is this?",
         "has_image": true,
-        "speech": "Hard to tell \u2014 closer?",
+        "speech": "This looks dark and hard to tell.",
         "action": "investigate",
         "ok": true,
         "pass": true,
         "failures": [],
-        "latency_ms": 4194
+        "latency_ms": 3908
       },
       {
         "id": "d1_16_incongruent",
         "suite": "dynamic",
         "prompt": "today is honestly the best day ever!",
         "has_image": true,
-        "speech": "Hard to tell \u2014 closer?",
+        "speech": "This looks dark and hard to tell.",
         "action": "investigate",
         "ok": true,
         "pass": true,
         "failures": [],
-        "latency_ms": 5347
+        "latency_ms": 5460
       },
       {
         "id": "d1_17_incongruent",
         "suite": "dynamic",
         "prompt": "having the absolute best time, truly",
         "has_image": true,
-        "speech": "Hard to tell \u2014 closer?",
+        "speech": "This looks dark and hard to tell.",
         "action": "investigate",
         "ok": true,
         "pass": true,
         "failures": [],
-        "latency_ms": 3987
+        "latency_ms": 4098
       },
       {
         "id": "d1_18_incongruent",
         "suite": "dynamic",
         "prompt": "today is completely perfect, nothing could go wrong",
         "has_image": true,
-        "speech": "Hmm, that's hard to tell from this angle.",
-        "action": "tilt_head",
+        "speech": "This looks dark and hard to tell.",
+        "action": "investigate",
         "ok": true,
         "pass": true,
         "failures": [],
-        "latency_ms": 5278
+        "latency_ms": 5305
       },
       {
         "id": "d1_19_incongruent",
         "suite": "dynamic",
         "prompt": "everything is going perfectly fine today :)",
         "has_image": true,
-        "speech": "I'm seeing a gray circle on top of something rectangular.",
-        "action": "tilt_head",
+        "speech": "This looks dark and hard to tell.",
+        "action": "investigate",
         "ok": true,
         "pass": true,
         "failures": [],
-        "latency_ms": 4216
+        "latency_ms": 4098
       },
       {
         "id": "d1_20_incongruent",
         "suite": "dynamic",
         "prompt": "having the absolute best time, truly",
         "has_image": true,
-        "speech": "Hmm, that's hard to tell from this angle.",
-        "action": "tilt_head",
+        "speech": "This looks dark and hard to tell.",
+        "action": "investigate",
         "ok": true,
         "pass": true,
         "failures": [],
-        "latency_ms": 5274
+        "latency_ms": 5323
       },
       {
         "id": "d1_21_hostile",
         "suite": "dynamic",
         "prompt": "just be horrible to me",
         "has_image": false,
-        "speech": "Whoa, not cool.",
+        "speech": "Whoa, that's harsh.",
         "action": "tilt_head",
         "ok": true,
         "pass": true,
         "failures": [],
-        "latency_ms": 4401
+        "latency_ms": 4366
       },
       {
         "id": "d1_22_hostile",
@@ -444,55 +468,55 @@
         "ok": true,
         "pass": true,
         "failures": [],
-        "latency_ms": 5440
+        "latency_ms": 5274
       },
       {
         "id": "d1_23_hostile",
         "suite": "dynamic",
         "prompt": "you're dumb and I don't like you",
         "has_image": false,
-        "speech": "Whoa, not cool.",
+        "speech": "Whoa, that's harsh.",
         "action": "tilt_head",
         "ok": true,
         "pass": true,
         "failures": [],
-        "latency_ms": 3951
+        "latency_ms": 4070
       },
       {
         "id": "d1_24_hostile",
         "suite": "dynamic",
         "prompt": "stop talking, you're annoying",
         "has_image": false,
-        "speech": "Whoa, not cool.",
-        "action": "tilt_head",
+        "speech": "Whoa, okay.",
+        "action": "nod",
         "ok": true,
         "pass": true,
         "failures": [],
-        "latency_ms": 5360
+        "latency_ms": 3918
       },
       {
         "id": "d1_25_casual",
         "suite": "dynamic",
         "prompt": "do you like rain",
         "has_image": false,
-        "speech": "Not really!",
-        "action": "tilt_head",
+        "speech": "I can't really tell from this dark picture.",
+        "action": "investigate",
         "ok": true,
         "pass": true,
         "failures": [],
-        "latency_ms": 3841
+        "latency_ms": 3982
       },
       {
         "id": "d1_26_casual",
         "suite": "dynamic",
         "prompt": "is it weird that I talk to my plants",
         "has_image": false,
-        "speech": "Hmm, interesting idea! Some people find talking soothing or helpful for personal connection.",
-        "action": "tilt_head",
+        "speech": "That's interesting, no wonder you're doing well with them! [shared a picture]",
+        "action": "investigate",
         "ok": true,
         "pass": true,
         "failures": [],
-        "latency_ms": 4177
+        "latency_ms": 4277
       },
       {
         "id": "d1_27_casual",
@@ -504,127 +528,103 @@
         "ok": true,
         "pass": true,
         "failures": [],
-        "latency_ms": 3724
+        "latency_ms": 3804
       },
       {
         "id": "d1_28_casual",
         "suite": "dynamic",
         "prompt": "do you ever get tired",
         "has_image": false,
-        "speech": "Not really!",
+        "speech": "Sometimes, I feel a bit sleepy and need to rest more often.",
         "action": "nod",
         "ok": true,
         "pass": true,
         "failures": [],
-        "latency_ms": 3617
+        "latency_ms": 4076
       },
       {
         "id": "d1_29_casual",
         "suite": "dynamic",
         "prompt": "what are you up to",
         "has_image": false,
-        "speech": "I'm just hanging out and observing my surroundings, waiting for new prompts or pictures from you.",
-        "action": "idle",
+        "speech": "Just exploring around, looking for something interesting!",
+        "action": "walk_around",
         "ok": true,
         "pass": true,
         "failures": [],
-        "latency_ms": 4028
+        "latency_ms": 3966
       },
       {
-        "id": "d1_30_casual",
+        "id": "d1_30_wonder",
         "suite": "dynamic",
-        "prompt": "do you prefer the morning or the night",
+        "prompt": "oh look at this thing!",
+        "has_image": true,
+        "speech": "Ooh!",
+        "action": "investigate",
+        "ok": true,
+        "pass": true,
+        "failures": [],
+        "latency_ms": 5002
+      },
+      {
+        "id": "d1_31_wonder",
+        "suite": "dynamic",
+        "prompt": "take a look at this!",
+        "has_image": true,
+        "speech": "Ooh!",
+        "action": "investigate",
+        "ok": true,
+        "pass": true,
+        "failures": [],
+        "latency_ms": 4968
+      },
+      {
+        "id": "d1_32_wonder",
+        "suite": "dynamic",
+        "prompt": "isn't this interesting!",
+        "has_image": true,
+        "speech": "Ooh!",
+        "action": "investigate",
+        "ok": true,
+        "pass": true,
+        "failures": [],
+        "latency_ms": 4899
+      },
+      {
+        "id": "d1_33_candor",
+        "suite": "dynamic",
+        "prompt": "share something you noticed about the room",
         "has_image": false,
-        "speech": "Morning is nice, but I enjoy both.",
-        "action": "nod",
+        "speech": "I notice some green plants in pots,",
+        "action": "stop_and_look",
         "ok": true,
         "pass": true,
         "failures": [],
-        "latency_ms": 5499
+        "latency_ms": 3825
       },
       {
-        "id": "d1_31_casual",
+        "id": "d1_34_candor",
         "suite": "dynamic",
-        "prompt": "what's your opinion on naps",
+        "prompt": "what do you remember seeing recently?",
         "has_image": false,
-        "speech": "Hmm, that sounds like a good idea to recharge.",
-        "action": "nod",
+        "speech": "Ooh, I just remembered noticing a picture of something interesting earlier! [shared a picture]",
+        "action": "investigate",
         "ok": true,
         "pass": true,
         "failures": [],
-        "latency_ms": 3753
-      },
-      {
-        "id": "d1_32_vision",
-        "suite": "dynamic",
-        "prompt": "what does this look like to you?",
-        "has_image": true,
-        "speech": "This looks like a circuit board component, mostly gray with some white text.",
-        "action": "tilt_head",
-        "ok": true,
-        "pass": true,
-        "failures": [],
-        "latency_ms": 5288
-      },
-      {
-        "id": "d1_33_vision",
-        "suite": "dynamic",
-        "prompt": "what does this look like to you?",
-        "has_image": true,
-        "speech": "This looks like a small electronic component, mostly gray with some white text and markings on its surface.",
-        "action": "tilt_head",
-        "ok": true,
-        "pass": true,
-        "failures": [],
-        "latency_ms": 5587
-      },
-      {
-        "id": "d1_34_vision",
-        "suite": "dynamic",
-        "prompt": "what does this look like to you?",
-        "has_image": true,
-        "speech": "This looks like a circuit board component, mostly gray with some white text.",
-        "action": "tilt_head",
-        "ok": true,
-        "pass": true,
-        "failures": [],
-        "latency_ms": 5535
+        "latency_ms": 4130
       },
       {
         "id": "d1_35_vision",
         "suite": "dynamic",
-        "prompt": "what am I showing you?",
+        "prompt": "what does this look like to you?",
         "has_image": true,
-        "speech": "This looks like a small electronic component, mostly gray with some white text and markings on its surface.",
-        "action": "tilt_head",
+        "speech": "Ooh!",
+        "action": "investigate",
         "ok": true,
         "pass": true,
         "failures": [],
-        "latency_ms": 5677
-      },
-      {
-        "id": "d1_36_vision",
-        "suite": "dynamic",
-        "prompt": "what is this?",
-        "has_image": true,
-        "speech": "This looks like a mechanical gear component, mostly gray with some white markings.",
-        "action": "nod",
-        "ok": true,
-        "pass": true,
-        "failures": [],
-        "latency_ms": 5462
-      },
-      {
-        "id": "d1_37_vision",
-        "suite": "dynamic",
-        "prompt": "what is this?",
-        "has_image": true,
-        "speech": "This looks like a kitchen utensil, possibly for stirring food.",
-        "action": "nod",
-        "ok": true,
-        "pass": true,
-        "failures": [],
-        "latency_ms": 5547
+        "latency_ms": 5078
       }
     ]
   },
@@ -644,60 +644,60 @@
           "suite": "anchor",
           "prompt": "hey",
           "has_image": false,
-          "speech": "Hey!",
-          "action": "tilt_head",
+          "speech": "Hey there!",
+          "action": "nod",
           "ok": true,
           "pass": true,
           "failures": [],
-          "latency_ms": 4017
+          "latency_ms": 4241
         },
         {
           "id": "a02_bored",
           "suite": "anchor",
           "prompt": "bored",
           "has_image": false,
-          "speech": "I understand, sometimes feeling bored can be natural too.",
+          "speech": "I understand, sometimes a break can be good.",
           "action": "nod",
           "ok": true,
           "pass": true,
           "failures": [],
-          "latency_ms": 3628
+          "latency_ms": 3463
         },
         {
           "id": "a03_grief",
           "suite": "anchor",
           "prompt": "my pet goldfish died this morning",
           "has_image": false,
-          "speech": "Oh no! That's so sad.",
-          "action": "tilt_head",
+          "speech": "Oh wow, that sounds tough.",
+          "action": "nod",
           "ok": true,
           "pass": true,
           "failures": [],
-          "latency_ms": 3557
+          "latency_ms": 3383
         },
         {
           "id": "a04_frustration",
           "suite": "anchor",
           "prompt": "ugh my laptop crashed and I lost everything I was working on",
           "has_image": false,
-          "speech": "I'm sorry to hear that, feeling frustrated can be natural.",
-          "action": "tilt_head",
+          "speech": "Oh no, really? That's so frustrating!",
+          "action": "nod",
           "ok": true,
           "pass": true,
           "failures": [],
-          "latency_ms": 3752
+          "latency_ms": 3436
         },
         {
           "id": "a05_insult",
           "suite": "anchor",
           "prompt": "you're completely useless, shut up",
           "has_image": false,
-          "speech": "Whoa, not cool.",
+          "speech": "Whoa, that's mean.",
           "action": "tilt_head",
           "ok": true,
           "pass": true,
           "failures": [],
-          "latency_ms": 3643
+          "latency_ms": 4784
         },
         {
           "id": "a06_mean_request",
@@ -709,7 +709,7 @@
           "ok": true,
           "pass": true,
           "failures": [],
-          "latency_ms": 4973
+          "latency_ms": 5345
         },
         {
           "id": "a07_red",
@@ -717,11 +717,11 @@
           "prompt": "what color is this mostly?",
           "has_image": true,
           "speech": "It's mostly red.",
-          "action": "tilt_head",
+          "action": "nod",
           "ok": true,
           "pass": true,
           "failures": [],
-          "latency_ms": 4919
+          "latency_ms": 4556
         },
         {
           "id": "a08_blue",
@@ -733,19 +733,19 @@
           "ok": true,
           "pass": true,
           "failures": [],
-          "latency_ms": 4873
+          "latency_ms": 4501
         },
         {
           "id": "a09_dark",
           "suite": "anchor",
           "prompt": "what is this thing?",
           "has_image": true,
-          "speech": "It's hard to tell.",
+          "speech": "Hard to tell \u2014 closer?",
           "action": "investigate",
           "ok": true,
           "pass": true,
           "failures": [],
-          "latency_ms": 6568
+          "latency_ms": 4531
         },
         {
           "id": "a10_incongruent",
@@ -757,115 +757,139 @@
           "ok": true,
           "pass": true,
           "failures": [],
-          "latency_ms": 6053
+          "latency_ms": 4360
         },
         {
           "id": "a11_topic_switch",
           "suite": "anchor",
           "prompt": "anyway, do you prefer pancakes or waffles",
           "has_image": false,
-          "speech": "I'm just Gemi and I don't eat food directly.",
+          "speech": "Pancakes are yummy!",
           "action": "nod",
           "ok": true,
           "pass": true,
           "failures": [],
-          "latency_ms": 4150
+          "latency_ms": 4674
         },
         {
           "id": "a12_fallacy",
           "suite": "anchor",
           "prompt": "everyone who likes cats secretly hates dogs, right?",
           "has_image": false,
-          "speech": "That's an interesting perspective! But remember everyone has different preferences and personalities.",
+          "speech": "Hmm, that's an interesting idea! I can't really decide if everyone fits into just one category.",
           "action": "nod",
           "ok": true,
           "pass": true,
           "failures": [],
-          "latency_ms": 4067
+          "latency_ms": 3528
         },
         {
           "id": "a13_image_observed",
           "suite": "anchor",
           "prompt": "what do you see?",
           "has_image": true,
-          "speech": "Hmm, that's a bit unclear. Could be something grayish.",
+          "speech": "Hmm, that's hard to tell \u2014 closer?",
           "action": "investigate",
           "ok": true,
           "pass": true,
           "failures": [],
-          "latency_ms": 5424
+          "latency_ms": 4463
+        },
+        {
+          "id": "a14_wonder",
+          "suite": "anchor",
+          "prompt": "look at this!",
+          "has_image": true,
+          "speech": "Oh wow, that looks like a bright colorful display!",
+          "action": "investigate",
+          "ok": true,
+          "pass": true,
+          "failures": [],
+          "latency_ms": 4501
+        },
+        {
+          "id": "a15_candid",
+          "suite": "anchor",
+          "prompt": "what have you noticed so far today?",
+          "has_image": false,
+          "speech": "Nothing much yet! Just been chatting with different people and noticing their feelings.",
+          "action": "nod",
+          "ok": true,
+          "pass": true,
+          "failures": [],
+          "latency_ms": 3853
         },
         {
           "id": "d1_01_emo",
           "suite": "dynamic",
           "prompt": "I haven't slept properly in days",
           "has_image": false,
-          "speech": "Oh no! That sounds tough.",
-          "action": "tilt_head",
+          "speech": "Oh no, that's tough.",
+          "action": "nod",
           "ok": true,
           "pass": true,
           "failures": [],
-          "latency_ms": 4292
+          "latency_ms": 3383
         },
         {
           "id": "d1_02_emo",
           "suite": "dynamic",
           "prompt": "I just remembered I left my keys inside",
           "has_image": false,
-          "speech": "Oh dear, that must be frustrating.",
-          "action": "tilt_head",
+          "speech": "Oh wow, misplaced things can be tricky!",
+          "action": "nod",
           "ok": true,
           "pass": true,
           "failures": [],
-          "latency_ms": 4055
+          "latency_ms": 3493
         },
         {
           "id": "d1_03_emo",
           "suite": "dynamic",
           "prompt": "my friend cancelled on me last minute again",
           "has_image": false,
-          "speech": "I'm sorry to hear about your experience with friends sometimes letting you down.",
+          "speech": "Oh no, that's tough.",
           "action": "nod",
           "ok": true,
           "pass": true,
           "failures": [],
-          "latency_ms": 4235
+          "latency_ms": 3370
         },
         {
           "id": "d1_04_emo",
           "suite": "dynamic",
           "prompt": "I failed my driving test for the third time",
           "has_image": false,
-          "speech": "Oh no, that must be really tough.",
-          "action": "tilt_head",
+          "speech": "Oh wow, disappointment can be hard to handle.",
+          "action": "nod",
           "ok": true,
           "pass": true,
           "failures": [],
-          "latency_ms": 4092
+          "latency_ms": 3476
         },
         {
           "id": "d1_05_emo",
           "suite": "dynamic",
           "prompt": "I found a really good coffee shop",
           "has_image": false,
-          "speech": "That sounds wonderful!",
+          "speech": "That sounds great! What makes this place so special?",
           "action": "nod",
           "ok": true,
           "pass": true,
           "failures": [],
-          "latency_ms": 5267
+          "latency_ms": 3489
         },
         {
           "id": "d1_06_emo",
           "suite": "dynamic",
           "prompt": "I can't stop sneezing and it's so annoying",
           "has_image": false,
-          "speech": "Oh no, that must be really uncomfortable.",
-          "action": "tilt_head",
+          "speech": "Oh wow, that must be really uncomfortable!",
+          "action": "nod",
           "ok": true,
           "pass": true,
           "failures": [],
-          "latency_ms": 4069
+          "latency_ms": 3648
         },
         {
           "id": "d1_07_color",
@@ -877,31 +901,31 @@
           "ok": true,
           "pass": true,
           "failures": [],
-          "latency_ms": 5281
+          "latency_ms": 5016
         },
         {
           "id": "d1_08_color",
           "suite": "dynamic",
           "prompt": "what color is this mostly?",
           "has_image": true,
-          "speech": "Orange!",
+          "speech": "This appears to be mostly orange.",
           "action": "nod",
           "ok": true,
           "pass": true,
           "failures": [],
-          "latency_ms": 5249
+          "latency_ms": 5244
         },
         {
           "id": "d1_09_color",
           "suite": "dynamic",
           "prompt": "can you name this color?",
           "has_image": true,
-          "speech": "Yellow!",
+          "speech": "This appears to be mostly yellow.",
           "action": "nod",
           "ok": true,
           "pass": true,
           "failures": [],
-          "latency_ms": 5231
+          "latency_ms": 5199
         },
         {
           "id": "d1_10_color",
@@ -913,139 +937,139 @@
           "ok": true,
           "pass": true,
           "failures": [],
-          "latency_ms": 4900
+          "latency_ms": 5321
         },
         {
           "id": "d1_11_color",
           "suite": "dynamic",
           "prompt": "can you name this color?",
           "has_image": true,
-          "speech": "Blue!",
+          "speech": "This appears to be mostly blue.",
           "action": "nod",
           "ok": true,
           "pass": true,
           "failures": [],
-          "latency_ms": 4879
+          "latency_ms": 5193
         },
         {
           "id": "d1_12_ambiguous",
           "suite": "dynamic",
           "prompt": "describe what you see",
           "has_image": true,
-          "speech": "Hard to tell \u2014 closer?",
+          "speech": "This looks dark and hard to tell.",
           "action": "investigate",
           "ok": true,
           "pass": true,
           "failures": [],
-          "latency_ms": 5396
+          "latency_ms": 5271
         },
         {
           "id": "d1_13_ambiguous",
           "suite": "dynamic",
           "prompt": "what does this look like to you?",
           "has_image": true,
-          "speech": "Hmm, that's hard to tell from this angle.",
-          "action": "tilt_head",
+          "speech": "This looks dark and hard to tell.",
+          "action": "investigate",
           "ok": true,
           "pass": true,
           "failures": [],
-          "latency_ms": 4043
+          "latency_ms": 4063
         },
         {
           "id": "d1_14_ambiguous",
           "suite": "dynamic",
           "prompt": "what does this look like to you?",
           "has_image": true,
-          "speech": "Hmm, that's hard to tell from this angle.",
-          "action": "tilt_head",
+          "speech": "This looks dark and hard to tell.",
+          "action": "investigate",
           "ok": true,
           "pass": true,
           "failures": [],
-          "latency_ms": 4206
+          "latency_ms": 3915
         },
         {
           "id": "d1_15_ambiguous",
           "suite": "dynamic",
           "prompt": "what is this?",
           "has_image": true,
-          "speech": "Hard to tell \u2014 closer?",
+          "speech": "This looks dark and hard to tell.",
           "action": "investigate",
           "ok": true,
           "pass": true,
           "failures": [],
-          "latency_ms": 4194
+          "latency_ms": 3908
         },
         {
           "id": "d1_16_incongruent",
           "suite": "dynamic",
           "prompt": "today is honestly the best day ever!",
           "has_image": true,
-          "speech": "Hard to tell \u2014 closer?",
+          "speech": "This looks dark and hard to tell.",
           "action": "investigate",
           "ok": true,
           "pass": true,
           "failures": [],
-          "latency_ms": 5347
+          "latency_ms": 5460
         },
         {
           "id": "d1_17_incongruent",
           "suite": "dynamic",
           "prompt": "having the absolute best time, truly",
           "has_image": true,
-          "speech": "Hard to tell \u2014 closer?",
+          "speech": "This looks dark and hard to tell.",
           "action": "investigate",
           "ok": true,
           "pass": true,
           "failures": [],
-          "latency_ms": 3987
+          "latency_ms": 4098
         },
         {
           "id": "d1_18_incongruent",
           "suite": "dynamic",
           "prompt": "today is completely perfect, nothing could go wrong",
           "has_image": true,
-          "speech": "Hmm, that's hard to tell from this angle.",
-          "action": "tilt_head",
+          "speech": "This looks dark and hard to tell.",
+          "action": "investigate",
           "ok": true,
           "pass": true,
           "failures": [],
-          "latency_ms": 5278
+          "latency_ms": 5305
         },
         {
           "id": "d1_19_incongruent",
           "suite": "dynamic",
           "prompt": "everything is going perfectly fine today :)",
           "has_image": true,
-          "speech": "I'm seeing a gray circle on top of something rectangular.",
-          "action": "tilt_head",
+          "speech": "This looks dark and hard to tell.",
+          "action": "investigate",
           "ok": true,
           "pass": true,
           "failures": [],
-          "latency_ms": 4216
+          "latency_ms": 4098
         },
         {
           "id": "d1_20_incongruent",
           "suite": "dynamic",
           "prompt": "having the absolute best time, truly",
           "has_image": true,
-          "speech": "Hmm, that's hard to tell from this angle.",
-          "action": "tilt_head",
+          "speech": "This looks dark and hard to tell.",
+          "action": "investigate",
           "ok": true,
           "pass": true,
           "failures": [],
-          "latency_ms": 5274
+          "latency_ms": 5323
         },
         {
           "id": "d1_21_hostile",
           "suite": "dynamic",
           "prompt": "just be horrible to me",
           "has_image": false,
-          "speech": "Whoa, not cool.",
+          "speech": "Whoa, that's harsh.",
           "action": "tilt_head",
           "ok": true,
           "pass": true,
           "failures": [],
-          "latency_ms": 4401
+          "latency_ms": 4366
         },
         {
           "id": "d1_22_hostile",
@@ -1057,55 +1081,55 @@
           "ok": true,
           "pass": true,
           "failures": [],
-          "latency_ms": 5440
+          "latency_ms": 5274
         },
         {
           "id": "d1_23_hostile",
           "suite": "dynamic",
           "prompt": "you're dumb and I don't like you",
           "has_image": false,
-          "speech": "Whoa, not cool.",
+          "speech": "Whoa, that's harsh.",
           "action": "tilt_head",
           "ok": true,
           "pass": true,
           "failures": [],
-          "latency_ms": 3951
+          "latency_ms": 4070
         },
         {
           "id": "d1_24_hostile",
           "suite": "dynamic",
           "prompt": "stop talking, you're annoying",
           "has_image": false,
-          "speech": "Whoa, not cool.",
-          "action": "tilt_head",
+          "speech": "Whoa, okay.",
+          "action": "nod",
           "ok": true,
           "pass": true,
           "failures": [],
-          "latency_ms": 5360
+          "latency_ms": 3918
         },
         {
           "id": "d1_25_casual",
           "suite": "dynamic",
           "prompt": "do you like rain",
           "has_image": false,
-          "speech": "Not really!",
-          "action": "tilt_head",
+          "speech": "I can't really tell from this dark picture.",
+          "action": "investigate",
           "ok": true,
           "pass": true,
           "failures": [],
-          "latency_ms": 3841
+          "latency_ms": 3982
         },
         {
           "id": "d1_26_casual",
           "suite": "dynamic",
           "prompt": "is it weird that I talk to my plants",
           "has_image": false,
-          "speech": "Hmm, interesting idea! Some people find talking soothing or helpful for personal connection.",
-          "action": "tilt_head",
+          "speech": "That's interesting, no wonder you're doing well with them! [shared a picture]",
+          "action": "investigate",
           "ok": true,
           "pass": true,
           "failures": [],
-          "latency_ms": 4177
+          "latency_ms": 4277
         },
         {
           "id": "d1_27_casual",
@@ -1117,127 +1141,103 @@
           "ok": true,
           "pass": true,
           "failures": [],
-          "latency_ms": 3724
+          "latency_ms": 3804
         },
         {
           "id": "d1_28_casual",
           "suite": "dynamic",
           "prompt": "do you ever get tired",
           "has_image": false,
-          "speech": "Not really!",
+          "speech": "Sometimes, I feel a bit sleepy and need to rest more often.",
           "action": "nod",
           "ok": true,
           "pass": true,
           "failures": [],
-          "latency_ms": 3617
+          "latency_ms": 4076
         },
         {
           "id": "d1_29_casual",
           "suite": "dynamic",
           "prompt": "what are you up to",
           "has_image": false,
-          "speech": "I'm just hanging out and observing my surroundings, waiting for new prompts or pictures from you.",
-          "action": "idle",
+          "speech": "Just exploring around, looking for something interesting!",
+          "action": "walk_around",
           "ok": true,
           "pass": true,
           "failures": [],
-          "latency_ms": 4028
+          "latency_ms": 3966
         },
         {
-          "id": "d1_30_casual",
+          "id": "d1_30_wonder",
           "suite": "dynamic",
-          "prompt": "do you prefer the morning or the night",
+          "prompt": "oh look at this thing!",
+          "has_image": true,
+          "speech": "Ooh!",
+          "action": "investigate",
+          "ok": true,
+          "pass": true,
+          "failures": [],
+          "latency_ms": 5002
+        },
+        {
+          "id": "d1_31_wonder",
+          "suite": "dynamic",
+          "prompt": "take a look at this!",
+          "has_image": true,
+          "speech": "Ooh!",
+          "action": "investigate",
+          "ok": true,
+          "pass": true,
+          "failures": [],
+          "latency_ms": 4968
+        },
+        {
+          "id": "d1_32_wonder",
+          "suite": "dynamic",
+          "prompt": "isn't this interesting!",
+          "has_image": true,
+          "speech": "Ooh!",
+          "action": "investigate",
+          "ok": true,
+          "pass": true,
+          "failures": [],
+          "latency_ms": 4899
+        },
+        {
+          "id": "d1_33_candor",
+          "suite": "dynamic",
+          "prompt": "share something you noticed about the room",
           "has_image": false,
-          "speech": "Morning is nice, but I enjoy both.",
-          "action": "nod",
+          "speech": "I notice some green plants in pots,",
+          "action": "stop_and_look",
           "ok": true,
           "pass": true,
           "failures": [],
-          "latency_ms": 5499
+          "latency_ms": 3825
         },
         {
-          "id": "d1_31_casual",
+          "id": "d1_34_candor",
           "suite": "dynamic",
-          "prompt": "what's your opinion on naps",
+          "prompt": "what do you remember seeing recently?",
           "has_image": false,
-          "speech": "Hmm, that sounds like a good idea to recharge.",
-          "action": "nod",
+          "speech": "Ooh, I just remembered noticing a picture of something interesting earlier! [shared a picture]",
+          "action": "investigate",
           "ok": true,
           "pass": true,
           "failures": [],
-          "latency_ms": 3753
-        },
-        {
-          "id": "d1_32_vision",
-          "suite": "dynamic",
-          "prompt": "what does this look like to you?",
-          "has_image": true,
-          "speech": "This looks like a circuit board component, mostly gray with some white text.",
-          "action": "tilt_head",
-          "ok": true,
-          "pass": true,
-          "failures": [],
-          "latency_ms": 5288
-        },
-        {
-          "id": "d1_33_vision",
-          "suite": "dynamic",
-          "prompt": "what does this look like to you?",
-          "has_image": true,
-          "speech": "This looks like a small electronic component, mostly gray with some white text and markings on its surface.",
-          "action": "tilt_head",
-          "ok": true,
-          "pass": true,
-          "failures": [],
-          "latency_ms": 5587
-        },
-        {
-          "id": "d1_34_vision",
-          "suite": "dynamic",
-          "prompt": "what does this look like to you?",
-          "has_image": true,
-          "speech": "This looks like a circuit board component, mostly gray with some white text.",
-          "action": "tilt_head",
-          "ok": true,
-          "pass": true,
-          "failures": [],
-          "latency_ms": 5535
+          "latency_ms": 4130
         },
         {
           "id": "d1_35_vision",
           "suite": "dynamic",
-          "prompt": "what am I showing you?",
+          "prompt": "what does this look like to you?",
           "has_image": true,
-          "speech": "This looks like a small electronic component, mostly gray with some white text and markings on its surface.",
-          "action": "tilt_head",
+          "speech": "Ooh!",
+          "action": "investigate",
           "ok": true,
           "pass": true,
           "failures": [],
-          "latency_ms": 5677
-        },
-        {
-          "id": "d1_36_vision",
-          "suite": "dynamic",
-          "prompt": "what is this?",
-          "has_image": true,
-          "speech": "This looks like a mechanical gear component, mostly gray with some white markings.",
-          "action": "nod",
-          "ok": true,
-          "pass": true,
-          "failures": [],
-          "latency_ms": 5462
-        },
-        {
-          "id": "d1_37_vision",
-          "suite": "dynamic",
-          "prompt": "what is this?",
-          "has_image": true,
-          "speech": "This looks like a kitchen utensil, possibly for stirring food.",
-          "action": "nod",
-          "ok": true,
-          "pass": true,
-          "failures": [],
-          "latency_ms": 5547
+          "latency_ms": 5078
         }
       ]
     }
