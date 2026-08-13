@@ -20,6 +20,7 @@ case "${ARCH}:${PYTHON_VERSION}" in
   *)
     printf 'Unsupported dlib-bin combination: Python %s on %s\n' \
       "${PYTHON_VERSION:-unknown}" "${ARCH:-unknown}" >&2
+    printf 'Supported: arm64 Python 3.10–3.14, x86_64 Python 3.10–3.13.\n' >&2
     exit 1
     ;;
 esac

@@ -41,15 +41,10 @@ jobs:
             --exclude '*.db' \
             "${GITHUB_WORKSPACE}/" "${DEPLOY_DIR}/"
           echo "DEPLOY_DIR=${DEPLOY_DIR}" >> "$GITHUB_ENV"
-          if command -v python3 >/dev/null 2>&1; then
-            PYTHON=python3
-          elif command -v python >/dev/null 2>&1; then
-            PYTHON=python
-          else
-            echo "No usable Python interpreter found on runner" >&2
-            exit 1
-          fi
-          $PYTHON --version
+          chmod +x "${DEPLOY_DIR}/scripts/select_python.sh" "${DEPLOY_DIR}/scripts/dlib_bin_version.sh"
+          PYTHON="$("${DEPLOY_DIR}/scripts/select_python.sh" "$ARCH")"
+          echo "Selected Python: ${PYTHON}"
+          "$PYTHON" --version
           rm -rf "${DEPLOY_DIR}/.venv"
           PYTHON_CMD=(arch "-${ARCH}" "$PYTHON")
           "${PYTHON_CMD[@]}" -m venv "${DEPLOY_DIR}/.venv"

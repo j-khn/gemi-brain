@@ -51,3 +51,4 @@ def test_rejects_unsupported_wheel(python_version, architecture):
 
     assert result.returncode != 0
     assert "Unsupported dlib-bin combination" in result.stderr
+    assert "Supported:" in result.stderr

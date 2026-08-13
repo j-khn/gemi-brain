@@ -35,6 +35,8 @@ gemi-brain/
 │   └── test_main.py         # Integration tests
 ├── scripts/
 │   ├── restart_server.sh              # Deployment service restart
+│   ├── dlib_bin_version.sh            # Selects a native dlib-bin wheel
+│   ├── select_python.sh               # Prefers a Python with a matching wheel
 │   └── repair_cursor_python_tools.sh  # Restores Cursor's Python discovery binary
 ├── run.py                   # Entry point
 ├── requirements.txt
@@ -47,7 +49,8 @@ gemi-brain/
 
 ### 1. Prerequisites
 
-- Python 3.11+
+- Python 3.10–3.14 on Apple Silicon, or Python 3.10–3.13 on Intel macOS
+  (CI pins Python 3.11; `scripts/select_python.sh` prefers a supported interpreter)
 - [Ollama](https://ollama.com/) running locally with the `openbmb/minicpm-o2.6` model
 - CMake, pkg-config, and libpng for face recognition image mode
   - macOS example:
