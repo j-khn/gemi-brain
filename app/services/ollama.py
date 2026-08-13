@@ -113,12 +113,40 @@ _CHARACTER_BREAK_MARKERS = (
     "i can't actually 'see'",
     'i can\'t actually "see"',
     "focused on audio",
+    "nice to meet you",
+    "i'm gemi",
+    "i am gemi",
+    "we can't share pictures",
 )
 
 
 def _speech_breaks_character(speech: str) -> bool:
     text = (speech or "").lower()
     return any(marker in text for marker in _CHARACTER_BREAK_MARKERS)
+
+
+def _clean_remembered_speech(speech: str) -> str:
+    """Turn a prior reply into a natural recollection snippet."""
+    cleaned = re.sub(
+        r"^(yeah\s*[—-]\s*|hi there[!.,\s]*|hello there[!.,\s]*|hello[!.,\s]*|hi[!.,\s]*)+",
+        "",
+        (speech or "").strip(),
+        flags=re.IGNORECASE,
+    ).strip()
+    return enforce_word_limit(cleaned or (speech or "").strip(), 20)
+
+
+def _memory_fallback_from_standouts(standout_moments: Optional[List[dict]]) -> Optional[Dict[str, str]]:
+    if not standout_moments:
+        return None
+    for turn in reversed(standout_moments):
+        remembered = (turn.get("gemi_response") or "").strip()
+        if not remembered or _speech_breaks_character(remembered):
+            continue
+        cleaned = _clean_remembered_speech(remembered)
+        if cleaned:
+            return {"speech": cleaned, "action": "nod"}
+    return None
 
 
 
@@ -377,15 +405,9 @@ async def perceive_and_generate(
             retry_parsed = parse_ollama_response(retry_raw)
             if not _speech_breaks_character(retry_parsed.get("speech", "")):
                 return retry_parsed
-            # If retry still breaks character but we have standout memory, lean on it softly.
-            if standout_moments:
-                last = standout_moments[-1]
-                remembered = (last.get("gemi_response") or "").strip()
-                if remembered and not _speech_breaks_character(remembered):
-                    return {
-                        "speech": enforce_word_limit(f"Yeah — {remembered}", 20),
-                        "action": "nod",
-                    }
+            fallback = _memory_fallback_from_standouts(standout_moments)
+            if fallback:
+                return fallback
 
         return parsed
     except (httpx.HTTPError, httpx.RequestError, Exception) as exc:

@@ -15,6 +15,9 @@ _HISTORY_STOPWORDS = {
     "will", "just", "like", "mean", "about", "with", "from", "into", "anything",
     "something", "everything", "nothing", "earlier", "before", "after", "again",
     "huh", "um", "uh", "shared", "picture",
+    # Common loop/noise words in this robot's corpus
+    "see", "look", "looking", "around", "decide", "interact",
+    "find", "interesting", "take", "got", "alright", "okay",
 }
 
 
@@ -356,23 +359,72 @@ def get_standout_conversation_moments(limit: int = 6, minutes: int = 60) -> List
         minutes = 60
     if limit <= 0:
         return []
+
+    break_markers = (
+        "as an ai",
+        "as a robot",
+        "my sensors",
+        "audio-only",
+        "audio only",
+        "focused on audio",
+        "i can't actually",
+    )
+
     with get_db_connection() as conn:
         cursor = conn.cursor()
+        # Prefer real shared-visual turns; they are the stickiest memories.
+        cursor.execute(
+            "SELECT user_prompt, gemi_response, timestamp FROM conversations "
+            "WHERE timestamp >= datetime('now', ?) "
+            "AND user_prompt LIKE '%[shared a picture]%' "
+            "ORDER BY timestamp DESC LIMIT ?",
+            (f"-{minutes} minutes", max(limit * 3, limit)),
+        )
+        rows = cursor.fetchall()
+        moments: List[Dict[str, str]] = []
+        seen_responses = set()
+        for row in reversed(rows):
+            turn = _row_to_history_turn(row)
+            response = (turn.get("gemi_response") or "").strip()
+            response_l = response.lower()
+            if not response or any(marker in response_l for marker in break_markers):
+                continue
+            if response_l in seen_responses:
+                continue
+            seen_responses.add(response_l)
+            moments.append(turn)
+            if len(moments) >= limit:
+                return moments
+
+        if moments:
+            return moments
+
         cursor.execute(
             "SELECT user_prompt, gemi_response, timestamp FROM conversations "
             "WHERE timestamp >= datetime('now', ?) "
             "AND ("
-            "  user_prompt LIKE '%[shared a picture]%' "
-            "  OR lower(gemi_response) LIKE '%picture%' "
+            "  lower(gemi_response) LIKE '%picture%' "
             "  OR lower(gemi_response) LIKE '%photo%' "
             "  OR lower(gemi_response) LIKE '%i noticed%' "
             "  OR lower(gemi_response) LIKE '%looks like%' "
             ") "
             "ORDER BY timestamp DESC LIMIT ?",
-            (f"-{minutes} minutes", limit),
+            (f"-{minutes} minutes", max(limit * 3, limit)),
         )
         rows = cursor.fetchall()
-        return [_row_to_history_turn(row) for row in reversed(rows)]
+        for row in reversed(rows):
+            turn = _row_to_history_turn(row)
+            response = (turn.get("gemi_response") or "").strip()
+            response_l = response.lower()
+            if not response or any(marker in response_l for marker in break_markers):
+                continue
+            if response_l in seen_responses:
+                continue
+            seen_responses.add(response_l)
+            moments.append(turn)
+            if len(moments) >= limit:
+                break
+        return moments
 
 
 def prepare_conversation_history_for_prompt(
@@ -386,6 +438,15 @@ def prepare_conversation_history_for_prompt(
     prepared: List[Dict[str, str]] = []
     seen = set()
     last_user_norm = None
+    break_markers = (
+        "as an ai",
+        "as a robot",
+        "my sensors",
+        "audio-only",
+        "audio only",
+        "focused on audio",
+        "i can't actually",
+    )
 
     for turn in ordered:
         user_prompt = turn.get("user_prompt") or ""
@@ -399,6 +460,9 @@ def prepare_conversation_history_for_prompt(
         user_norm = _normalize_prompt_text(user_prompt)
         # Asking the same thing again should not revive your own earlier brush-off.
         if current_norm and user_norm == current_norm:
+            continue
+        response_l = gemi_response.lower()
+        if any(marker in response_l for marker in break_markers):
             continue
         # Collapse boring identical loops (e.g. repeated look-around pings).
         if user_norm and user_norm == last_user_norm and len(prepared) > 0:
