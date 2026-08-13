@@ -78,10 +78,18 @@ Path("/tmp/gemi-requirements.txt").write_text(
 )
 PY
 python -m pip install --no-cache-dir -r /tmp/gemi-requirements.txt
-python -m pip install dlib-bin==19.24.6
+DLIB_BIN_VERSION="$(scripts/dlib_bin_version.sh \
+  "$(python -c 'import sys; print(".".join(map(str, sys.version_info[:2])))')" \
+  "$(uname -m)")"
+python -m pip install "dlib-bin==${DLIB_BIN_VERSION}"
 python -m pip install --no-deps face-recognition==1.3.0
 python -m pip install face-recognition-models==0.3.0
 ```
+
+The helper selects `dlib-bin==20.0.1` for Apple Silicon Python 3.14 and
+`dlib-bin==19.24.6` for older supported versions. It fails early for an
+unsupported Python/architecture combination instead of attempting a source
+build.
 
 On other platforms, install all requirements normally:
 

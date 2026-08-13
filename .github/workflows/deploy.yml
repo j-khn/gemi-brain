@@ -55,6 +55,9 @@ jobs:
           "${PYTHON_CMD[@]}" -m venv "${DEPLOY_DIR}/.venv"
           VENV_PYTHON_CMD=(arch "-${ARCH}" "${DEPLOY_DIR}/.venv/bin/python")
           "${VENV_PYTHON_CMD[@]}" -m pip install --upgrade pip "setuptools<81" wheel
+          PYTHON_VERSION="$("${VENV_PYTHON_CMD[@]}" -c 'import sys; print(".".join(map(str, sys.version_info[:2])))')"
+          DLIB_BIN_VERSION="$("${DEPLOY_DIR}/scripts/dlib_bin_version.sh" "$PYTHON_VERSION" "$ARCH")"
+          echo "Using dlib-bin ${DLIB_BIN_VERSION} for Python ${PYTHON_VERSION} on ${ARCH}"
           "${VENV_PYTHON_CMD[@]}" - "${DEPLOY_DIR}/requirements.txt" <<'PY'
           from pathlib import Path
           import sys
@@ -65,7 +68,7 @@ jobs:
           )
           PY
           "${VENV_PYTHON_CMD[@]}" -m pip install --no-cache-dir -r /tmp/gemi-requirements.txt
-          "${VENV_PYTHON_CMD[@]}" -m pip install --no-cache-dir dlib-bin==19.24.6
+          "${VENV_PYTHON_CMD[@]}" -m pip install --no-cache-dir "dlib-bin==${DLIB_BIN_VERSION}"
           "${VENV_PYTHON_CMD[@]}" -m pip install --no-cache-dir --no-deps face-recognition==1.3.0
           "${VENV_PYTHON_CMD[@]}" -m pip install --no-cache-dir face-recognition-models==0.3.0
           "${VENV_PYTHON_CMD[@]}" -c "import platform, dlib, face_recognition; print('face recognition dependencies ready:', platform.machine())"

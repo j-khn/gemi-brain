@@ -16,4 +16,3 @@ trigger: always_on
   1. **Run tests** — always run `pytest tests/ -v` and fix any failures before finishing.
   2. **Update tests** — verify existing tests still cover the change; add or update tests in `tests/` when behavior, endpoints, or APIs change.
   3. **Update README** — verify `README.md` still matches the codebase; update setup, usage, project structure, or API docs when the change affects them.
-- **After completing a change:** commit the verified changes and push them to the configured upstream branch.
