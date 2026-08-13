@@ -33,6 +33,9 @@ gemi-brain/
 │       └── vision.py         # Face recognition utilities (required for image mode)
 ├── tests/
 │   └── test_main.py         # Integration tests
+├── scripts/
+│   ├── restart_server.sh              # Deployment service restart
+│   └── repair_cursor_python_tools.sh  # Restores Cursor's Python discovery binary
 ├── run.py                   # Entry point
 ├── requirements.txt
 └── README.md
@@ -195,6 +198,37 @@ Schema migrations run automatically on startup — safe to use with older databa
 
 ```bash
 pytest tests/ -v
+```
+
+---
+
+## 🩺 Editor Tooling Repair (macOS + Cursor)
+
+Cursor sometimes installs the platform-neutral build of the `ms-python.python`
+extension, which ships without `python-env-tools/bin/pet`. That binary performs
+Python environment discovery, so without it the interpreter picker reports
+"Python is not installed", a selected interpreter is rejected as invalid, and
+the debugger stops immediately because it receives an empty Python command.
+
+Restore the binary and keep it restored after future extension updates:
+
+```bash
+./scripts/repair_cursor_python_tools.sh --install-agent
+```
+
+The script copies a working `pet` from the VS Code extension directory, caches
+it in `~/.local/share/gemi-brain/python-env-tools` so later repairs do not need
+VS Code, and installs a launchd agent that watches
+`~/.cursor/extensions/extensions.json`. Whenever Cursor installs or updates an
+extension, the agent restores `pet` automatically and logs to
+`~/Library/Logs/com.gemi.cursor-python-tools.log`.
+
+Run it once without arguments to repair now, and reload the Cursor window
+afterwards so the extension host picks up the binary:
+
+```bash
+./scripts/repair_cursor_python_tools.sh
+./scripts/repair_cursor_python_tools.sh --uninstall-agent  # stop watching
 ```
 
 ---
