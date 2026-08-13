@@ -4,7 +4,7 @@
     {
       "label": "Run Gemi Brain (localhost:8000)",
       "type": "shell",
-      "command": "/Users/test/Projects/gemi-brain/.venv/bin/python3.11 -m uvicorn app.main:app --host 127.0.0.1 --port 8000",
+      "command": "/Users/test/Projects/gemi-brain/.venv/bin/python -m uvicorn app.main:app --host 127.0.0.1 --port 8000",
       "options": {
         "cwd": "/Users/test/Projects/gemi-brain"
       },

@@ -6,7 +6,7 @@
       "type": "debugpy",
       "request": "launch",
       "module": "uvicorn",
-      "python": "/Users/test/Projects/gemi-brain/.venv/bin/python3.11",
+      "python": "/Users/test/Projects/gemi-brain/.venv/bin/python",
       "cwd": "/Users/test/Projects/gemi-brain",
       "console": "internalConsole",
       "env": {
