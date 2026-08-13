@@ -54,6 +54,13 @@ async def perceive(request: PerceiveRequest):
             raise HTTPException(status_code=400, detail=f"Too many image frames; limit is {image_limit}.")
 
         if frames:
+            try:
+                # Canonicalize once so face recognition and Ollama receive the
+                # exact same validated JPEG bytes.
+                frames = [vision.normalize_image_base64(frame) for frame in frames]
+            except ValueError as exc:
+                raise HTTPException(status_code=400, detail=str(exc)) from exc
+
             if not vision.is_face_recognition_available():
                 raise HTTPException(
                     status_code=503,

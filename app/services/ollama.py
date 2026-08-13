@@ -5,6 +5,7 @@ import httpx
 from typing import Optional, Dict, Any, List
 
 from app.db import database
+from app.services.vision import normalize_image_base64
 
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434/api/generate")
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "openbmb/minicpm-o2.6")
@@ -253,12 +254,15 @@ async def perceive_and_generate(
         for frm in image_frames:
             if not frm:
                 continue
-            if "," in frm:
-                images_clean.append(frm.split(",", 1)[1])
-            else:
-                images_clean.append(frm)
+            images_clean.append(normalize_image_base64(frm))
         if images_clean:
             payload["images"] = images_clean
+            user_prompt_parts.append(
+                "An image is attached in the multimodal images input. Inspect it "
+                "before answering; do not say you cannot see unless the image "
+                "itself is unavailable or unreadable."
+            )
+            payload["prompt"] = "\n".join(user_prompt_parts)
 
     close_client = False
     if client is None:

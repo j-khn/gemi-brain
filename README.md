@@ -266,7 +266,9 @@ cd /Users/test/Projects/gemi-brain
 ./actions-runner/run.sh
 ```
 
-4. The CI workflow runs deployment as a reusable workflow after tests pass on `develop` or `main`, using the exact tested commit. It can also be started manually via `workflow_dispatch`.
+4. The CI workflow runs deployment as a reusable workflow after tests pass on
+   `master`, using the exact tested commit. It can also be started manually via
+   `workflow_dispatch`.
 
 5. Deployment copies the tested application to `~/.gemi-brain`, starts a
    macOS `launchd` service when the runner session permits it, and otherwise

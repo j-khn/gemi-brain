@@ -6,6 +6,7 @@ sensible fallback values when the library is unavailable.
 """
 
 import base64
+import binascii
 import io
 import logging
 from typing import List, Optional, Tuple
@@ -46,13 +47,32 @@ def check_face_recognition_health() -> tuple[bool, str]:
     return False, "missing face_recognition library"
 
 
+def normalize_image_base64(image_str: str) -> str:
+    """Validate and canonicalize a base64 image for both vision paths.
+
+    Accepts raw base64 or a ``data:image/...;base64,`` value, tolerates
+    transport whitespace, and returns canonical padded base64. Invalid input
+    raises ``ValueError`` instead of being silently sent to Ollama.
+    """
+    if not isinstance(image_str, str) or not image_str.strip():
+        raise ValueError("image_frame must contain a non-empty base64 string.")
+
+    b64 = image_str.split(",", 1)[1] if "," in image_str else image_str
+    b64 = "".join(b64.split())
+    b64 += "=" * ((4 - len(b64) % 4) % 4)
+    try:
+        decoded = base64.b64decode(b64, validate=True)
+    except (binascii.Error, ValueError) as exc:
+        raise ValueError("image_frame is not valid base64.") from exc
+
+    if not decoded:
+        raise ValueError("image_frame contains no image bytes.")
+    return base64.b64encode(decoded).decode("ascii")
+
+
 def decode_image_base64(image_str: str) -> bytes:
-    """Decode a base64-encoded image string, stripping any data-URL prefix."""
-    if "," in image_str:
-        _, b64 = image_str.split(",", 1)
-    else:
-        b64 = image_str
-    return base64.b64decode(b64)
+    """Decode a validated base64 image, stripping data-URL/whitespace."""
+    return base64.b64decode(normalize_image_base64(image_str))
 
 
 def extract_face_embedding(image_bytes: bytes) -> List[float]:
