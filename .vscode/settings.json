@@ -1,5 +1,5 @@
 {
-  "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
+  "python.defaultInterpreterPath": "/Users/test/Projects/gemi-brain/.venv/bin/python",
   "python.terminal.activateEnvironment": true,
   "python.testing.pytestArgs": [
     "tests"
