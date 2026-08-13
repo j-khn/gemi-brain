@@ -389,6 +389,8 @@ def get_standout_conversation_moments(limit: int = 6, minutes: int = 60) -> List
             response_l = response.lower()
             if not response or any(marker in response_l for marker in break_markers):
                 continue
+            if response_l.startswith("yeah"):
+                continue
             if response_l in seen_responses:
                 continue
             seen_responses.add(response_l)
@@ -417,6 +419,8 @@ def get_standout_conversation_moments(limit: int = 6, minutes: int = 60) -> List
             response = (turn.get("gemi_response") or "").strip()
             response_l = response.lower()
             if not response or any(marker in response_l for marker in break_markers):
+                continue
+            if response_l.startswith("yeah"):
                 continue
             if response_l in seen_responses:
                 continue
@@ -463,6 +467,8 @@ def prepare_conversation_history_for_prompt(
             continue
         response_l = gemi_response.lower()
         if any(marker in response_l for marker in break_markers):
+            continue
+        if response_l.startswith("yeah"):
             continue
         # Collapse boring identical loops (e.g. repeated look-around pings).
         if user_norm and user_norm == last_user_norm and len(prepared) > 0:

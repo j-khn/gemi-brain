@@ -128,9 +128,15 @@ def _speech_breaks_character(speech: str) -> bool:
 def _clean_remembered_speech(speech: str) -> str:
     """Turn a prior reply into a natural recollection snippet."""
     cleaned = re.sub(
-        r"^(yeah\s*[—-]\s*|hi there[!.,\s]*|hello there[!.,\s]*|hello[!.,\s]*|hi[!.,\s]*)+",
+        r"^(yeah\s*[—\-]\s*)+",
         "",
         (speech or "").strip(),
+        flags=re.IGNORECASE,
+    ).strip()
+    cleaned = re.sub(
+        r"^(hi there[!.,\s]*|hello there[!.,\s]*|hello[!.,\s]*|hi[!.,\s]*)+",
+        "",
+        cleaned,
         flags=re.IGNORECASE,
     ).strip()
     return enforce_word_limit(cleaned or (speech or "").strip(), 20)
@@ -389,6 +395,9 @@ async def perceive_and_generate(
         res_json = response.json()
         raw_output = res_json.get("response", "")
         parsed = parse_ollama_response(raw_output)
+        # Clean accidental echo of older fallback phrasing.
+        if (parsed.get("speech") or "").lower().startswith("yeah"):
+            parsed["speech"] = _clean_remembered_speech(parsed["speech"])
 
         # One gentle retry if the model slips into device/AI talk.
         if _speech_breaks_character(parsed.get("speech", "")):
