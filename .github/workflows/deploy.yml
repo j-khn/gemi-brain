@@ -54,7 +54,7 @@ jobs:
           PYTHON_CMD=(arch "-${ARCH}" "$PYTHON")
           "${PYTHON_CMD[@]}" -m venv "${DEPLOY_DIR}/.venv"
           VENV_PYTHON_CMD=(arch "-${ARCH}" "${DEPLOY_DIR}/.venv/bin/python")
-          "${VENV_PYTHON_CMD[@]}" -m pip install --upgrade pip setuptools wheel
+          "${VENV_PYTHON_CMD[@]}" -m pip install --upgrade pip "setuptools<81" wheel
           "${VENV_PYTHON_CMD[@]}" - "${DEPLOY_DIR}/requirements.txt" <<'PY'
           from pathlib import Path
           import sys

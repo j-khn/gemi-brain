@@ -9,7 +9,8 @@ pydantic
 python-dotenv
 pytest
 pytest-asyncio
-setuptools
+# face-recognition-models 0.3.0 still imports pkg_resources.
+setuptools<81
 numpy
 pillow
 face_recognition

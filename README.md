@@ -57,18 +57,37 @@ gemi-brain/
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
+python -m pip install --upgrade pip "setuptools<81" wheel
 ```
 
-On Apple Silicon macOS, install the required face-recognition packages with
-the prebuilt `dlib-bin` wheel to avoid compiling dlib's bundled ARM libpng:
+On Apple Silicon macOS, install the non-face dependencies first, then install
+the required face-recognition packages with the prebuilt `dlib-bin` wheel.
+This avoids compiling dlib's bundled ARM libpng:
 
 ```bash
-python -m pip install -r <(python -c 'from pathlib import Path; print("\n".join(line for line in Path("requirements.txt").read_text().splitlines() if line.strip().lower() != "face_recognition"))')
+python - <<'PY'
+from pathlib import Path
+
+requirements = Path("requirements.txt").read_text().splitlines()
+Path("/tmp/gemi-requirements.txt").write_text(
+    "\n".join(line for line in requirements
+              if line.strip().lower() != "face_recognition") + "\n"
+)
+PY
+python -m pip install --no-cache-dir -r /tmp/gemi-requirements.txt
 python -m pip install dlib-bin==19.24.6
 python -m pip install --no-deps face-recognition==1.3.0
 python -m pip install face-recognition-models==0.3.0
 ```
+
+On other platforms, install all requirements normally:
+
+```bash
+python -m pip install -r requirements.txt
+```
+
+`setuptools<81` is required because `face-recognition-models` 0.3.0 still
+imports the legacy `pkg_resources` API.
 
 ### 3. Run the server
 
