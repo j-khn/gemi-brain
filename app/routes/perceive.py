@@ -201,7 +201,7 @@ async def perceive(request: PerceiveRequest):
             face_detected=face_detected,
         )
 
-        speech = result.get("speech", "Hello!")
+        speech = result.get("speech", "Hmm?")
         action = result.get("action", "stop_and_look")
 
         # ------------------------------------------------------------------

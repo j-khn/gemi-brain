@@ -163,7 +163,7 @@ All fields are optional. If `image_frame` is omitted, Gemi operates in **audio-o
 
 ```json
 {
-  "speech": "Hi! I hear you but I can't see you right now!",
+  "speech": "Hi! I hear you but I can't see you.",
   "action": "tilt_head"
 }
 ```
