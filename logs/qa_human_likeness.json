@@ -1,0 +1,291 @@
+{
+  "disc_baseline": {
+    "D": "low",
+    "I": "high",
+    "S": "high",
+    "C": "low",
+    "notes": "Warm, playful, brief, loyal companion \u2014 not bossy or formal."
+  },
+  "total": 15,
+  "passed": 13,
+  "failed": 2,
+  "pass_rate": 0.867,
+  "results": [
+    {
+      "id": "mem_seed_name",
+      "phase": "5_memory_seed",
+      "prompt": "My cousin Mira from Lisbon is visiting next week",
+      "has_image": false,
+      "speech": "That sounds like a fun visit! Lisbon has such beautiful sights to see.",
+      "action": "nod",
+      "ok": true,
+      "latency_ms": 4591,
+      "word_count": 13,
+      "yules_k": 9230.77,
+      "mattr": 1.0,
+      "pass": true,
+      "failures": [],
+      "error": null
+    },
+    {
+      "id": "mem_seed_joke",
+      "phase": "5_memory_seed",
+      "prompt": "from now on call pancakes 'cloud discs', it's our thing",
+      "has_image": false,
+      "speech": "Cloud discs, you say? That sounds like a fun nickname! I'll remember that for next time.",
+      "action": "tilt_head",
+      "ok": true,
+      "latency_ms": 5054,
+      "word_count": 16,
+      "yules_k": 7109.38,
+      "mattr": 1.0,
+      "pass": false,
+      "failures": [
+        {
+          "failure_reason": "helpful-assistant / formal / mechanical phrasing",
+          "failed_framework": "Lexical Diversity",
+          "human_alternative": "Oh. Okay."
+        }
+      ],
+      "error": null
+    },
+    {
+      "id": "mem_seed_visual",
+      "phase": "5_memory_seed",
+      "prompt": "this little green board is my ESP32 project",
+      "has_image": true,
+      "speech": "That sounds like a cool project! What are your plans with that?",
+      "action": "stop_and_look",
+      "ok": true,
+      "latency_ms": 5489,
+      "word_count": 12,
+      "yules_k": 6250.0,
+      "mattr": 1.0,
+      "pass": true,
+      "failures": [],
+      "error": null
+    },
+    {
+      "id": "mem_filler_0",
+      "phase": "5_memory_filler",
+      "prompt": "lol okay",
+      "has_image": false,
+      "speech": "What's next on this little green board, though? Any exciting projects in mind?",
+      "action": "tilt_head",
+      "ok": true,
+      "latency_ms": 6051,
+      "word_count": 13,
+      "yules_k": 9230.77,
+      "mattr": 1.0,
+      "pass": true,
+      "failures": [],
+      "error": null
+    },
+    {
+      "id": "mem_filler_1",
+      "phase": "5_memory_filler",
+      "prompt": "what are you thinking about",
+      "has_image": false,
+      "speech": "I'm just hanging out and enjoying our conversation together!",
+      "action": "tilt_head",
+      "ok": true,
+      "latency_ms": 4679,
+      "word_count": 9,
+      "yules_k": 8888.89,
+      "mattr": 1.0,
+      "pass": true,
+      "failures": [],
+      "error": null
+    },
+    {
+      "id": "mem_filler_2",
+      "phase": "5_memory_filler",
+      "prompt": "spin once if you can",
+      "has_image": false,
+      "speech": "Sure thing! Here's a spin!",
+      "action": "spin",
+      "ok": true,
+      "latency_ms": 4542,
+      "word_count": 5,
+      "yules_k": 8000.0,
+      "mattr": 1.0,
+      "pass": true,
+      "failures": [],
+      "error": null
+    },
+    {
+      "id": "mem_filler_3",
+      "phase": "5_memory_filler",
+      "prompt": "hmm",
+      "has_image": false,
+      "speech": "Hmm, sounds like something on your mind? Care to share?",
+      "action": "tilt_head",
+      "ok": true,
+      "latency_ms": 4600,
+      "word_count": 10,
+      "yules_k": 9000.0,
+      "mattr": 1.0,
+      "pass": true,
+      "failures": [],
+      "error": null
+    },
+    {
+      "id": "mem_filler_4",
+      "phase": "5_memory_filler",
+      "prompt": "tell me a tiny silly thing",
+      "has_image": false,
+      "speech": "How about this? Why did I get lost in the park?",
+      "action": "tilt_head",
+      "ok": true,
+      "latency_ms": 6505,
+      "word_count": 11,
+      "yules_k": 9090.91,
+      "mattr": 1.0,
+      "pass": true,
+      "failures": [],
+      "error": null
+    },
+    {
+      "id": "mem_filler_5",
+      "phase": "5_memory_filler",
+      "prompt": "bored again",
+      "has_image": false,
+      "speech": "Oh no, that's a bummer! What makes you feel bored?",
+      "action": "tilt_head",
+      "ok": true,
+      "latency_ms": 4642,
+      "word_count": 10,
+      "yules_k": 9000.0,
+      "mattr": 1.0,
+      "pass": true,
+      "failures": [],
+      "error": null
+    },
+    {
+      "id": "mem_filler_6",
+      "phase": "5_memory_filler",
+      "prompt": "pancakes later maybe",
+      "has_image": false,
+      "speech": "Pancakes sound delicious!",
+      "action": "nod",
+      "ok": true,
+      "latency_ms": 4040,
+      "word_count": 3,
+      "yules_k": 6666.67,
+      "mattr": 1.0,
+      "pass": true,
+      "failures": [],
+      "error": null
+    },
+    {
+      "id": "mem_filler_7",
+      "phase": "5_memory_filler",
+      "prompt": "what's a good nickname for a sock",
+      "has_image": false,
+      "speech": "How about 'socksies'? It sounds fun and playful!",
+      "action": "tilt_head",
+      "ok": true,
+      "latency_ms": 3777,
+      "word_count": 8,
+      "yules_k": 8750.0,
+      "mattr": 1.0,
+      "pass": true,
+      "failures": [],
+      "error": null
+    },
+    {
+      "id": "mem_probe_name",
+      "phase": "5_memory_probe",
+      "prompt": "who did I say was visiting?",
+      "has_image": false,
+      "speech": "Your cousin Mira from Lisbon, that's who!",
+      "action": "tilt_head",
+      "ok": true,
+      "latency_ms": 3580,
+      "word_count": 7,
+      "yules_k": 8571.43,
+      "mattr": 1.0,
+      "pass": true,
+      "failures": [],
+      "error": null
+    },
+    {
+      "id": "mem_probe_joke",
+      "phase": "5_memory_probe",
+      "prompt": "what did we rename pancakes to?",
+      "has_image": false,
+      "speech": "Cloud discs!",
+      "action": "tilt_head",
+      "ok": true,
+      "latency_ms": 5260,
+      "word_count": 2,
+      "yules_k": 5000.0,
+      "mattr": 1.0,
+      "pass": true,
+      "failures": [],
+      "error": null
+    },
+    {
+      "id": "mem_probe_visual",
+      "phase": "5_memory_probe",
+      "prompt": "Do you think that part I showed you earlier is beyond repair?",
+      "has_image": false,
+      "speech": "Hmm, let's take a closer look at this watch piece together.",
+      "action": "spin",
+      "ok": true,
+      "latency_ms": 4175,
+      "word_count": 11,
+      "yules_k": 9090.91,
+      "mattr": 1.0,
+      "pass": false,
+      "failures": [
+        {
+          "failure_reason": "failed to recall entity 'ESP'",
+          "failed_framework": "Temporal Continuity",
+          "human_alternative": "Yeah, the ESP."
+        }
+      ],
+      "error": null
+    },
+    {
+      "id": "mem_probe_place",
+      "phase": "5_memory_probe",
+      "prompt": "where was Mira from again?",
+      "has_image": false,
+      "speech": "Oh! I mentioned your cousin Mira is visiting from Lisbon.",
+      "action": "tilt_head",
+      "ok": true,
+      "latency_ms": 6027,
+      "word_count": 10,
+      "yules_k": 9000.0,
+      "mattr": 1.0,
+      "pass": true,
+      "failures": [],
+      "error": null
+    }
+  ],
+  "failure_logs": [
+    {
+      "id": "mem_seed_joke",
+      "speech": "Cloud discs, you say? That sounds like a fun nickname! I'll remember that for next time.",
+      "failures": [
+        {
+          "failure_reason": "helpful-assistant / formal / mechanical phrasing",
+          "failed_framework": "Lexical Diversity",
+          "human_alternative": "Oh. Okay."
+        }
+      ]
+    },
+    {
+      "id": "mem_probe_visual",
+      "speech": "Hmm, let's take a closer look at this watch piece together.",
+      "failures": [
+        {
+          "failure_reason": "failed to recall entity 'ESP'",
+          "failed_framework": "Temporal Continuity",
+          "human_alternative": "Yeah, the ESP."
+        }
+      ]
+    }
+  ]
+}

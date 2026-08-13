@@ -1,0 +1,9 @@
+[
+  {
+    "batch": 1,
+    "phase1_pass_rate": 100.0,
+    "psych_pass_rate": 100.0,
+    "memory_pass_rate": 100.0,
+    "failure_ids": []
+  }
+]
