@@ -12,6 +12,8 @@ from app.db.database import (
     get_conversation_history_by_query,
     get_recent_conversation_history,
     get_recent_interaction_logs,
+    get_standout_conversation_moments,
+    prepare_conversation_history_for_prompt,
     get_person_id_by_name,
     save_conversation_turn,
     save_interaction_log,
@@ -162,7 +164,7 @@ async def perceive(request: PerceiveRequest):
             for pid in person_ids:
                 conversation_history.extend(get_conversation_history(pid, limit=8))
         if not conversation_history:
-            conversation_history = get_recent_conversation_history(limit=12, minutes=60)
+            conversation_history = get_recent_conversation_history(limit=16, minutes=60)
         if request.prompt:
             query_history = get_conversation_history_by_query(request.prompt, limit=6)
             if query_history:
@@ -177,6 +179,12 @@ async def perceive(request: PerceiveRequest):
                         conversation_history.append(turn)
                         seen.add(key)
 
+        standout_moments = get_standout_conversation_moments(limit=6, minutes=60)
+        conversation_history = prepare_conversation_history_for_prompt(
+            conversation_history,
+            current_prompt=request.prompt,
+            limit=12,
+        )
         recent_notes = get_recent_interaction_logs(limit=8, minutes=60)
 
         # ------------------------------------------------------------------
@@ -206,6 +214,7 @@ async def perceive(request: PerceiveRequest):
             image_frames=frames or None,
             memory_context=memory_context,
             recent_notes=recent_notes or None,
+            standout_moments=standout_moments or None,
             sensor_status=request.sensor_status,
             conversation_history=conversation_history,
             vision_available=vision_available,

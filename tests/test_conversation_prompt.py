@@ -37,7 +37,8 @@ def test_system_prompt_encourages_human_memory_and_feelings():
     system, _ = _capture_prompt(prompt="Look around")
 
     assert "remember them the way a person would" in system
-    assert "does not erase what you already noticed" in system
+    assert "Check context the way a person would" in system
+    assert "trust those clearer moments" in system
     assert "Never say \"as an AI\"" in system or "as an AI" in system
     assert "my sensors" in system
     assert "Greet at most once" in system
@@ -78,16 +79,25 @@ def test_no_current_image_still_keeps_past_memory():
             "gemi_response": "Cute dog!",
         }
     ]
+    standout = [
+        {
+            "user_prompt": "what is this? [shared a picture]",
+            "gemi_response": "Cute dog!",
+            "timestamp": "2026-08-13 21:00:00",
+        }
+    ]
     _, prompt = _capture_prompt(
         prompt="What did you see earlier?",
         conversation_history=history,
         recent_notes=["Prompt: what is this? [shared a picture] -> Speech: 'Cute dog!'"],
+        standout_moments=standout,
         vision_available=False,
     )
 
     assert "Cute dog!" in prompt
+    assert "Moments that stood out recently" in prompt
     assert "Recent notes from earlier moments" in prompt
-    assert "remember what you noticed earlier" in prompt
+    assert "Stay grounded in what already happened" in prompt
     assert "Your eyes are closed" not in prompt
     assert "cannot see right now" not in prompt
 
@@ -100,3 +110,54 @@ def test_recent_interaction_logs_are_readable():
     notes = database.get_recent_interaction_logs(limit=5, minutes=60)
     assert notes
     assert "Saw something cute earlier" in notes[-1]
+
+
+def test_history_prep_drops_same_question_repeats_and_keeps_standouts():
+    if os.path.exists("test_gemi_memory.db"):
+        os.remove("test_gemi_memory.db")
+    database.init_db()
+    database.save_conversation_turn(
+        None, "what is this? [shared a picture]", "Cute dog on the phone!"
+    )
+    database.save_conversation_turn(
+        None, "I mean did you see anything earlier?", "Nope, my sensors are focused on audio right now."
+    )
+    database.save_conversation_turn(
+        None, "Look around and decide how to interact.", "Got it, I'll take a look around."
+    )
+    database.save_conversation_turn(
+        None, "Look around and decide how to interact.", "Got it, I'll take a look around."
+    )
+
+    standouts = database.get_standout_conversation_moments(limit=5, minutes=60)
+    assert standouts
+    assert any("Cute dog" in (t["gemi_response"] or "") for t in standouts)
+
+    related = database.get_conversation_history_by_query(
+        "I mean did you see anything earlier?", limit=6
+    )
+    assert all(
+        database._normalize_prompt_text(t["user_prompt"])
+        != database._normalize_prompt_text("I mean did you see anything earlier?")
+        for t in related
+    )
+
+    prepared = database.prepare_conversation_history_for_prompt(
+        related
+        + database.get_recent_conversation_history(limit=10, minutes=60)
+        + [
+            {
+                "user_prompt": "I mean did you see anything earlier?",
+                "gemi_response": "Nope, my sensors are focused on audio right now.",
+                "timestamp": "2026-08-13 21:07:28",
+            }
+        ],
+        current_prompt="I mean did you see anything earlier?",
+        limit=12,
+    )
+    assert prepared
+    assert all(
+        database._normalize_prompt_text(t["user_prompt"])
+        != database._normalize_prompt_text("I mean did you see anything earlier?")
+        for t in prepared
+    )

@@ -1,8 +1,49 @@
 import os
+import re
 import sqlite3
-from typing import Optional, List
+from typing import Optional, List, Dict
 
 DB_PATH = os.getenv("DB_PATH", "gemi_memory.db")
+
+_HISTORY_STOPWORDS = {
+    "a", "an", "the", "and", "or", "but", "if", "to", "for", "of", "in", "on", "at",
+    "is", "are", "was", "were", "be", "been", "am", "do", "did", "does", "have", "has",
+    "had", "i", "me", "my", "you", "your", "we", "our", "they", "them", "it", "its",
+    "what", "when", "where", "who", "why", "how", "which", "this", "that", "these",
+    "those", "there", "here", "now", "then", "than", "too", "very", "really", "also",
+    "not", "no", "yes", "ok", "okay", "please", "can", "could", "would", "should",
+    "will", "just", "like", "mean", "about", "with", "from", "into", "anything",
+    "something", "everything", "nothing", "earlier", "before", "after", "again",
+    "huh", "um", "uh", "shared", "picture",
+}
+
+
+def _normalize_prompt_text(text: Optional[str]) -> str:
+    """Normalize prompt text for duplicate detection."""
+    cleaned = re.sub(r"\[.*?\]", " ", text or "")
+    cleaned = re.sub(r"[^a-z0-9\s]", " ", cleaned.lower())
+    return re.sub(r"\s+", " ", cleaned).strip()
+
+
+def _query_keywords(query: str) -> List[str]:
+    """Extract lightweight content words from a user query."""
+    words = re.findall(r"[a-z0-9]{3,}", (query or "").lower())
+    seen = set()
+    keywords = []
+    for word in words:
+        if word in _HISTORY_STOPWORDS or word in seen:
+            continue
+        seen.add(word)
+        keywords.append(word)
+    return keywords
+
+
+def _row_to_history_turn(row: sqlite3.Row) -> Dict[str, str]:
+    return {
+        "user_prompt": row["user_prompt"],
+        "gemi_response": row["gemi_response"],
+        "timestamp": row["timestamp"],
+    }
 
 
 def get_db_connection() -> sqlite3.Connection:
@@ -259,26 +300,122 @@ def get_recent_conversation_history(limit: int = 10, minutes: int = 10):
 
 
 def get_conversation_history_by_query(query: str, limit: int = 10):
-    """Return conversation turns that mention query terms in user or gemi text."""
+    """Return related turns by content words, not exact full-phrase matches."""
     if not query or not query.strip():
         return []
-    search = f"%{query.strip()}%"
+
+    keywords = _query_keywords(query)
+    current_norm = _normalize_prompt_text(query)
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        rows = []
+        if keywords:
+            clauses = []
+            params: List[str] = []
+            for word in keywords[:6]:
+                pattern = f"%{word}%"
+                clauses.append("(user_prompt LIKE ? OR gemi_response LIKE ?)")
+                params.extend([pattern, pattern])
+            sql = (
+                "SELECT user_prompt, gemi_response, timestamp FROM conversations "
+                f"WHERE {' OR '.join(clauses)} ORDER BY timestamp DESC LIMIT ?"
+            )
+            params.append(str(max(limit * 4, limit)))
+            cursor.execute(sql, params)
+            rows = cursor.fetchall()
+        else:
+            search = f"%{query.strip()}%"
+            cursor.execute(
+                "SELECT user_prompt, gemi_response, timestamp FROM conversations "
+                "WHERE user_prompt LIKE ? OR gemi_response LIKE ? "
+                "ORDER BY timestamp DESC LIMIT ?",
+                (search, search, limit),
+            )
+            rows = cursor.fetchall()
+
+        history = []
+        seen = set()
+        for row in reversed(rows):
+            turn = _row_to_history_turn(row)
+            # Skip near-duplicates of the current ask so old denials are not replayed.
+            if current_norm and _normalize_prompt_text(turn["user_prompt"]) == current_norm:
+                continue
+            key = (turn["user_prompt"], turn["gemi_response"], turn["timestamp"])
+            if key in seen:
+                continue
+            seen.add(key)
+            history.append(turn)
+            if len(history) >= limit:
+                break
+        return history
+
+
+def get_standout_conversation_moments(limit: int = 6, minutes: int = 60) -> List[Dict[str, str]]:
+    """Return recent moments that a person would tend to remember (esp. shared visuals)."""
+    if minutes <= 0:
+        minutes = 60
+    if limit <= 0:
+        return []
     with get_db_connection() as conn:
         cursor = conn.cursor()
         cursor.execute(
             "SELECT user_prompt, gemi_response, timestamp FROM conversations "
-            "WHERE user_prompt LIKE ? OR gemi_response LIKE ? ORDER BY timestamp DESC LIMIT ?",
-            (search, search, limit),
+            "WHERE timestamp >= datetime('now', ?) "
+            "AND ("
+            "  user_prompt LIKE '%[shared a picture]%' "
+            "  OR lower(gemi_response) LIKE '%picture%' "
+            "  OR lower(gemi_response) LIKE '%photo%' "
+            "  OR lower(gemi_response) LIKE '%i noticed%' "
+            "  OR lower(gemi_response) LIKE '%looks like%' "
+            ") "
+            "ORDER BY timestamp DESC LIMIT ?",
+            (f"-{minutes} minutes", limit),
         )
         rows = cursor.fetchall()
-        history = []
-        for row in reversed(rows):
-            history.append({
-                "user_prompt": row["user_prompt"],
-                "gemi_response": row["gemi_response"],
-                "timestamp": row["timestamp"],
-            })
-        return history
+        return [_row_to_history_turn(row) for row in reversed(rows)]
+
+
+def prepare_conversation_history_for_prompt(
+    turns: List[Dict[str, str]],
+    current_prompt: Optional[str] = None,
+    limit: int = 12,
+) -> List[Dict[str, str]]:
+    """Deduplicate, drop same-question repeats, and keep chronological continuity."""
+    current_norm = _normalize_prompt_text(current_prompt)
+    ordered = sorted(turns, key=lambda t: t.get("timestamp") or "")
+    prepared: List[Dict[str, str]] = []
+    seen = set()
+    last_user_norm = None
+
+    for turn in ordered:
+        user_prompt = turn.get("user_prompt") or ""
+        gemi_response = turn.get("gemi_response") or ""
+        timestamp = turn.get("timestamp") or ""
+        key = (user_prompt, gemi_response, timestamp)
+        if key in seen:
+            continue
+        seen.add(key)
+
+        user_norm = _normalize_prompt_text(user_prompt)
+        # Asking the same thing again should not revive your own earlier brush-off.
+        if current_norm and user_norm == current_norm:
+            continue
+        # Collapse boring identical loops (e.g. repeated look-around pings).
+        if user_norm and user_norm == last_user_norm and len(prepared) > 0:
+            if (prepared[-1].get("gemi_response") or "") == gemi_response:
+                continue
+        last_user_norm = user_norm
+        prepared.append(
+            {
+                "user_prompt": user_prompt,
+                "gemi_response": gemi_response,
+                "timestamp": timestamp,
+            }
+        )
+
+    if len(prepared) > limit:
+        prepared = prepared[-limit:]
+    return prepared
 
 
 def get_person_id_by_name(person_name: str) -> Optional[int]:

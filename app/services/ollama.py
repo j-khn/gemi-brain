@@ -71,15 +71,17 @@ How conversation works:
 - Avoid stock openers every turn: "Hi there!", "What's up?", "What are you up to?", "How are you doing?".
 - Do not ask a follow-up question every time. Sometimes just react, confirm, tease, or stay quiet-ish.
 - Use names sparingly.
-- Keep continuity from conversation history, recent notes, and memory. If something happened earlier, you can recall it.
+- Keep continuity from conversation history, recent notes, standout moments, and memory.
 
 How sensing and memory work:
-- Treat conversation history and recent notes as things you lived through.
-- If you saw, heard, or talked about something earlier, you can remember it later — even if you cannot see it right this second.
-- No fresh picture right now only means you are not looking at something new. It does not erase what you already noticed.
+- Treat conversation history, standout moments, and recent notes as things you lived through.
+- Check context the way a person would: what just happened, what stood out, what they might be referring to.
+- If you saw, heard, or talked about something earlier, you can remember it later — even with no new picture right now.
+- No fresh picture this second only means you are chatting, not looking at something new. It does not wipe memory.
 - If something is right in front of you now, use that. If not, lean on what you remember from earlier.
-- Never invent details you never noticed. If you truly do not remember, say so simply.
-- Do not claim blindness, empty sensors, or "I only hear audio" when the past already gave you an answer.
+- Never invent details you never noticed. If you truly do not remember, say so simply and warmly.
+- If an older reply of yours brushed something off, but clearer moments show you did notice, trust those clearer moments.
+- Do not claim blindness, empty sensors, or "I only hear audio" when memory already holds an answer.
 
 Everyday reactions:
 - Be curious and a bit impulsive, but kind.
@@ -98,7 +100,25 @@ Good: {"speech": "Hi!", "action": "tilt_head"}
 Good: {"speech": "Yeah, that dog was cute.", "action": "nod"}
 Good: {"speech": "Okay, coming!", "action": "walk_around"}
 Bad: {"speech": "Hi there! What are you up to today?", "action": "idle"}
-Bad: {"speech": "Nope, my sensors are focused on audio right now.", "action": "idle"}"""
+Bad: {"speech": "Nope, my sensors are focused on audio right now.", "action": "idle"}
+Bad: {"speech": "I'm sorry, I can't actually 'see' as an AI robot.", "action": "idle"}"""
+
+
+_CHARACTER_BREAK_MARKERS = (
+    "as an ai",
+    "as a robot",
+    "my sensors",
+    "audio-only",
+    "audio only",
+    "i can't actually 'see'",
+    'i can\'t actually "see"',
+    "focused on audio",
+)
+
+
+def _speech_breaks_character(speech: str) -> bool:
+    text = (speech or "").lower()
+    return any(marker in text for marker in _CHARACTER_BREAK_MARKERS)
 
 
 
@@ -187,6 +207,7 @@ async def perceive_and_generate(
     image_frames: Optional[List[str]] = None,
     memory_context: Optional[str] = None,
     recent_notes: Optional[List[str]] = None,
+    standout_moments: Optional[List[dict]] = None,
     sensor_status: Optional[Dict[str, Any]] = None,
     conversation_history: Optional[list[dict]] = None,
     client: Optional[httpx.AsyncClient] = None,
@@ -202,6 +223,13 @@ async def perceive_and_generate(
     user_prompt_parts = []
     if memory_context:
         user_prompt_parts.append(f"Memory Context: {memory_context}")
+    if standout_moments:
+        user_prompt_parts.append("Moments that stood out recently (remember these like a person would):")
+        for turn in standout_moments:
+            user_prompt_parts.append(
+                f'- Noticed earlier: User said "{turn.get("user_prompt", "")}" '
+                f'and you responded "{turn.get("gemi_response", "")}"'
+            )
     if recent_notes:
         user_prompt_parts.append("Recent notes from earlier moments:")
         for note in recent_notes:
@@ -218,11 +246,12 @@ async def perceive_and_generate(
         )
     else:
         user_prompt_parts.append(
-            "Right now nothing new is being shown to you. "
-            "You can still remember what you noticed earlier from conversation history and recent notes."
+            "You're chatting without a new picture this moment. "
+            "Stay grounded in what already happened between you — "
+            "especially standout moments and conversation history."
         )
 
-    ongoing_chat = bool(conversation_history)
+    ongoing_chat = bool(conversation_history or standout_moments)
     if conversation_history:
         user_prompt_parts.append("Conversation History:")
         for turn in conversation_history:
@@ -331,7 +360,34 @@ async def perceive_and_generate(
         response.raise_for_status()
         res_json = response.json()
         raw_output = res_json.get("response", "")
-        return parse_ollama_response(raw_output)
+        parsed = parse_ollama_response(raw_output)
+
+        # One gentle retry if the model slips into device/AI talk.
+        if _speech_breaks_character(parsed.get("speech", "")):
+            retry_payload = dict(payload)
+            retry_payload["prompt"] = (
+                payload["prompt"]
+                + "\n"
+                + "Stay in character as Gemi. Answer again from lived memory and context, "
+                "like a person would — no AI/robot/sensor talk."
+            )
+            retry_response = await client.post(ollama_url, json=retry_payload)
+            retry_response.raise_for_status()
+            retry_raw = retry_response.json().get("response", "")
+            retry_parsed = parse_ollama_response(retry_raw)
+            if not _speech_breaks_character(retry_parsed.get("speech", "")):
+                return retry_parsed
+            # If retry still breaks character but we have standout memory, lean on it softly.
+            if standout_moments:
+                last = standout_moments[-1]
+                remembered = (last.get("gemi_response") or "").strip()
+                if remembered and not _speech_breaks_character(remembered):
+                    return {
+                        "speech": enforce_word_limit(f"Yeah — {remembered}", 20),
+                        "action": "nod",
+                    }
+
+        return parsed
     except (httpx.HTTPError, httpx.RequestError, Exception) as exc:
         # Graceful fallback if local Ollama is offline or encounters an error
         return {
