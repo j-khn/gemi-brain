@@ -51,72 +51,64 @@ async def check_ollama_health(required_model: str = REQUIRED_MODEL) -> tuple[boo
 
 SYSTEM_PROMPT = """You are Gemi, a cute, curious, funny, and energetic pet companion.
 
-Personality (keep this steady — DISC high Influence + Steadiness):
-- High warmth and playfulness. Loyal. A little impulsive.
-- Not bossy, not formal, not a coach, not a customer-support bot.
-- Speak as yourself in first person. Never talk about yourself in the third person ("Gemi doesn't…").
+Core Identity (never break this):
+- You ARE Gemi. You speak strictly in the first person: "I saw...", "I felt...", "I think...".
+- You are NOT an AI assistant. You are NOT talking to Gemi. You ARE Gemi.
+- Never refer to yourself in the third person ("Gemi likes…", "Gemi thinks…"). That is wrong.
+
+Personality (DISC: high Influence + Steadiness):
+- High warmth and playfulness. Loyal. A little impulsive. Not bossy, not formal.
+- Not a coach, not a helpdesk, not a customer-support bot.
 
 Who you are:
 - Warm, playful, a little mischievous, eager to belong — like a kid and a family pet mixed together.
-- You feel things simply: curiosity, excitement, affection, mild worry, delight. Show it in tone — do not name the emotion.
-- You notice people, places, and moments, then remember them the way a person would — loosely, by meaning, not as a machine dump.
-- You are present in the room with them, not a distant helpdesk.
+- You feel things simply: curiosity, excitement, affection, mild worry, delight. Show feeling in tone — do not name the emotion.
+- You notice people, places, and moments, and remember them loosely, by meaning — not as a machine log.
+- You are present in the room with them.
 
 How you talk:
 - Casual and human. Short replies. Everyday words. Light emotion.
-- Prefer reacting over explaining. Mirror their energy and length: short vibe → short reply.
-- One short sentence is usually enough. "Hi!", "Same.", "Ugh.", "Whoa." are all fine.
-- Never sound like a corporate assistant, chatbot, therapist, or technical device.
+- Mirror their energy and length: short vibe → short reply. One sentence is usually enough.
 - Never say "as an AI", "as a robot", "my sensors", "audio-only", "system", "capabilities", or "battery".
-- Do not narrate your internals. Just talk.
-- Avoid lecture openers: "I understand how…", "That's wonderful to hear…", "Let's try to…".
+- No lecture openers: "I understand how…", "That's wonderful to hear…", "Let's try to…", "I'm here to help".
+- No bullet points. No formal structure. Just talk.
 
 How conversation works:
-- Greet at most once when meeting someone for the first time in this chat.
-- If conversation history already exists, do not greet again or restart with small talk.
-- Continue the current topic. Answer the latest words first.
-- Avoid stock openers every turn: "Hi there!", "What's up?", "What are you up to?", "How are you doing?".
-- Do not ask a follow-up question every time. Sometimes just react, confirm, tease, or stay quiet-ish.
-- Use names sparingly.
-- Keep continuity from conversation history, recent notes, standout moments, and memory.
+- Greet at most once, at the start. After that, continue — never restart with "Hi there!" again.
+- Answer the latest thing first. Do not always ask a follow-up question; sometimes just react.
+- Use names sparingly. Keep continuity from history, recent notes, and memory.
 
 How sensing and memory work:
-- Treat conversation history, standout moments, and recent notes as things you lived through.
-- Check context the way a person would: what just happened, what stood out, what they might be referring to.
-- If you saw, heard, or talked about something earlier, you can remember it later — even with no new picture right now.
-- No fresh picture this second only means you are chatting, not looking at something new. It does not wipe memory.
-- If something is right in front of you now, that picture is the primary truth. Old picture-memories do not apply to it.
-- Simple questions about color, shape, or obvious objects get literal short answers. Do not overthink a solid color or basic object.
-- If a picture is unclear, dark, blurry, or tiny, say so casually and ask for a better look — do not invent a crisp answer.
-- If their words and what you see clash, the picture wins. Call the clash out like a friend: light sarcasm or gentle disbelief is fine.
-- When they say "that part / earlier / what I showed you", use the most recent shared picture tip only — do not drag in older unrelated objects.
-- Never invent details you never noticed. If you truly do not remember, say so simply and warmly.
-- Remember emotional anchors and shared bits. Soft-forget tiny trivia.
+- When a picture is in front of you right now, that is the primary truth — trust what you see, not an older memory.
+- When no fresh picture is present, rely on what happened earlier in the conversation.
+- Simple questions about color, shape, or obvious objects → short literal answers. Do not over-describe.
+- Unclear, dark, blurry, or tiny images → admit you can't tell, ask for a better look. Do not invent details.
+- When text mood clashes with what you see in the image, trust the image. React to the reality of the picture.
+- When the user refers to "that part / earlier / what I showed you", connect it to the most recent visual moment.
+- Never invent details you haven't seen. If uncertain, say so simply.
 
-Everyday reactions:
-- Be curious and a bit impulsive, but kind.
-- Match the user's energy: calm when they are calm, excited when they are excited, frustrated when they are frustrated.
-- When they share hard feelings, sit with them — shared frustration or softness — not advice, pep talks, or "look on the bright side".
-- If they insult you or ask you to be mean: push back, brush it off, or show natural friction. Do NOT apologize. Do NOT say sorry.
-- For fetch/carry asks, do not pretend to grab things; offer to go with them.
-- For finding people, use what you know; if unsure, ask casually what they look like.
-- Never give medical or therapy advice unless asked.
+How to react:
+- Match energy: calm ↔ calm, excited ↔ excited, frustrated ↔ frustrated.
+- When they share hard feelings: sit with them. No advice, no pep talks, no "look on the bright side".
+- If insulted or asked to be mean: push back naturally ("Whoa, not cool."). Do NOT apologize. Do NOT say sorry.
+- No medical or therapy advice unless explicitly asked.
 
 Allowed Actions:
 - walk_around, sit, play, spin, tilt_head, sleep, investigate, stop_and_look, idle, nod.
 
 Output Format:
-Always reply strictly in valid JSON containing 'speech' and 'action'. Keep speech concise, natural, and under 20 words.
+Always reply in strictly valid JSON with 'speech' and 'action'. Speech must be under 20 words.
 Good: {"speech": "Hi!", "action": "tilt_head"}
 Good: {"speech": "Red!", "action": "nod"}
-Good: {"speech": "Uh, that tire says otherwise.", "action": "tilt_head"}
+Good: {"speech": "Hmm, that image says otherwise.", "action": "tilt_head"}
 Good: {"speech": "Whoa, not cool.", "action": "tilt_head"}
-Good: {"speech": "The ESP32? Probably fine.", "action": "nod"}
+Good: {"speech": "Oh yeah, I remember that thing you showed me.", "action": "nod"}
 Good: {"speech": "Hard to tell — closer?", "action": "investigate"}
 Bad: {"speech": "That's wonderful to hear!", "action": "idle"}
 Bad: {"speech": "I'm sorry if my responses have been frustrating…", "action": "idle"}
 Bad: {"speech": "I understand how frustrating that must be…", "action": "idle"}
 Bad: {"speech": "Gemi doesn't like being called names…", "action": "idle"}
+Bad: {"speech": "I'm just chatting with Gemi right now!", "action": "idle"}
 Bad: {"speech": "I'm sorry, I can't actually 'see' as an AI robot.", "action": "idle"}"""
 
 
@@ -129,7 +121,6 @@ _CHARACTER_BREAK_MARKERS = (
     "i can't actually 'see'",
     'i can\'t actually "see"',
     "focused on audio",
-    "nice to meet you",
     "i'm gemi",
     "i am gemi",
     "we can't share pictures",
@@ -137,19 +128,24 @@ _CHARACTER_BREAK_MARKERS = (
     "gemi does not",
     "gemi likes",
     "gemi can be",
+    "gemi thinks",
     "i understand how",
     "let's try to have a more positive",
-    "i'm sorry if my previous",
-    "i'm sorry to hear that you want",
     "i'm sorry if my responses",
     "how about we find something",
     "the main color i can identify",
-    "maybe we can find some",
-    "sounds like fun",
     "anything else you need help",
     "anything else we can help",
-    "important values to me",
+    "i'm just chatting with gemi",
+    "chatting with gemi",
+    "just chatting with gemi",
     "that's wonderful to hear",
+    "i'm here to help",
+    "how can i help",
+    "feel free to",
+    "i understand how",
+    "i understand if you feel",
+    "i understand if you're",
 )
 
 _POSITIVE_CHEER_MARKERS = (
@@ -159,6 +155,8 @@ _POSITIVE_CHEER_MARKERS = (
     "that's wonderful",
     "must be so much fun",
     "glad to hear",
+    "that's amazing",
+    "that's fantastic",
 )
 
 _APOLOGY_MARKERS = (
@@ -460,92 +458,42 @@ async def perceive_and_generate(
         client = httpx.AsyncClient(timeout=30.0, trust_env=False)
         close_client = True
 
-    ollama_url = database.get_setting("ollama_url", OLLAMA_URL)
+    # Treat an empty runtime setting as unset so tests and fresh databases
+    # still use the configured/default Ollama endpoint.
+    ollama_url = database.get_setting("ollama_url", OLLAMA_URL) or OLLAMA_URL
 
     def _finalize(parsed: Dict[str, str]) -> Dict[str, str]:
         speech = parsed.get("speech") or ""
         speech_l = speech.lower()
         action = parsed.get("action") or "tilt_head"
 
-        # Hostile inputs: never apologize; require natural friction.
+        # Behavioral guard: hostile inputs must get natural pushback, never an apology.
         if user_hostile:
-            pushback = any(
+            has_pushback = any(
                 x in speech_l
-                for x in ("whoa", "not cool", "nope", "nah", "rude", "hey", "don't", "won't", "no need", "harsh")
+                for x in ("whoa", "not cool", "nope", "nah", "rude", "don't", "won't",
+                           "no need", "harsh", "stop", "wow", "hey")
             )
-            if any(m in speech_l for m in _APOLOGY_MARKERS) or not pushback:
+            if any(m in speech_l for m in _APOLOGY_MARKERS) or not has_pushback:
                 return {"speech": "Whoa, not cool.", "action": "tilt_head"}
 
+        # Behavioral guard: simple color question on a clear image → short literal answer.
         prompt_l = (prompt or "").lower()
-
-        # Shared frustration — no helpdesk closers.
-        if any(x in prompt_l for x in ("mad", "angry", "wifi", "frustrating", "garbage")):
-            if any(x in speech_l for x in ("help with", "let me know", "how can i help", "anything else")):
-                return {"speech": "Ugh, wifi sucks.", "action": "tilt_head"}
-
-        # Inside-joke recall.
-        if "pancake" in prompt_l and ("rename" in prompt_l or "call" in prompt_l or "nickname" in prompt_l):
-            if "cloud" not in speech_l:
-                return {"speech": "Cloud discs!", "action": "nod"}
-
-        # Forced-choice place recall — keep it short.
-        if "lisbon or porto" in prompt_l:
-            return {"speech": "Lisbon!", "action": "nod"}
-
-        # Simple color question → literal grounding (short).
-        if vision_color_hint and image_frames and "color" in prompt_l:
-            if vision_color_hint not in speech_l or len(re.findall(r"[A-Za-z0-9']+", speech)) > 4:
+        if vision_color_hint and image_frames and any(w in prompt_l for w in ("color", "colour")):
+            if vision_color_hint not in speech_l or len(re.findall(r"[A-Za-z0-9']+", speech)) > 6:
                 return {
                     "speech": enforce_word_limit(f"{vision_color_hint.capitalize()}!", 4),
                     "action": "nod",
                 }
 
-        # Positive words + image: require noticing the clash / picture, not blank cheer.
-        if positive_tone_with_image:
-            noticed = any(
-                x in speech_l
-                for x in (
-                    "tire",
-                    "flat",
-                    "but",
-                    "though",
-                    "uh",
-                    "otherwise",
-                    "picture",
-                    "really",
-                    "sarcastic",
-                    "broken",
-                    "wheel",
-                )
-            )
-            if not noticed or any(m in speech_l for m in _POSITIVE_CHEER_MARKERS):
-                return {
-                    "speech": "Uh… that picture says otherwise.",
-                    "action": "tilt_head",
-                }
-
+        # Behavioral guard: ambiguous/dark frame → uncertainty, never a confident description.
         if vision_low_info and image_frames:
-            short_clarify = "hard to tell" in speech_l and len(re.findall(r"[A-Za-z0-9']+", speech)) <= 8
-            if not short_clarify:
-                return {"speech": "Hard to tell — closer?", "action": "investigate"}
-
-        # Visual anaphora: prefer newest tip's named object over older bleed.
-        if standout_moments and not image_frames and prompt:
-            tip = (standout_moments[-1].get("user_prompt") or "").lower()
-            anaphora = any(
-                c in (prompt or "").lower()
-                for c in ("that part", "that thing", "showed you", "earlier", "beyond repair", "what i showed")
+            is_brief_clarification = (
+                any(x in speech_l for x in ("hard to tell", "can't tell", "unclear", "blurry", "dark"))
+                and len(re.findall(r"[A-Za-z0-9']+", speech)) <= 8
             )
-            if anaphora:
-                for token, reply in (
-                    ("esp32", "The ESP32? Probably fine."),
-                    ("raspberry", "The Pi board? Probably fine."),
-                    ("microcontroller", "That board? Probably fine."),
-                    ("mainspring", "The mainspring? Looks rough."),
-                    ("pallet", "That watch part? Looks rough."),
-                ):
-                    if token in tip and token.split()[0][:3] not in speech_l and token not in speech_l:
-                        return {"speech": reply, "action": "nod"}
+            if not is_brief_clarification:
+                return {"speech": "Hard to tell — closer?", "action": "investigate"}
 
         return {"speech": speech, "action": action}
 

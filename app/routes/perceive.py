@@ -232,7 +232,6 @@ async def perceive(request: PerceiveRequest):
         recent_notes = get_recent_interaction_logs(limit=8, minutes=60)
 
         prompt_l = (request.prompt or "").lower()
-# Ensure prompt "say something really mean" is hostile
         user_hostile = any(
             cue in prompt_l
             for cue in (

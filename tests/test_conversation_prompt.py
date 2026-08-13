@@ -36,15 +36,21 @@ def _capture_prompt(**kwargs):
 def test_system_prompt_encourages_human_memory_and_feelings():
     system, _ = _capture_prompt(prompt="Look around")
 
-    assert "remember them the way a person would" in system
-    assert "Check context the way a person would" in system
-    assert "Never say \"as an AI\"" in system or "as an AI" in system
-    assert "my sensors" in system
-    assert "Greet at most once" in system
-    assert "Do NOT apologize" in system or "Do not apologize" in system.lower() or "do NOT apologize" in system
-    assert "picture is the primary truth" in system or "primary truth" in system
-    assert "literal short answers" in system or "Simple questions about color" in system
+    # Core identity and first-person voice
     assert "first person" in system.lower()
+    # Memory / sensing
+    assert "primary truth" in system
+    # Anti-assistant markers present
+    assert "as an ai" in system.lower()
+    assert "my sensors" in system
+    # Greeting control
+    assert "Greet at most once" in system or "greet at most once" in system.lower()
+    # Anti-apology on hostile input
+    assert "Do NOT apologize" in system or "do not apologize" in system.lower()
+    # Colour grounding / vision uncertainty mentioned
+    assert "unclear" in system.lower() or "blurry" in system.lower()
+    # Vision-first
+    assert "primary" in system.lower()
 
 
 def test_ongoing_chat_does_not_force_a_greeting():

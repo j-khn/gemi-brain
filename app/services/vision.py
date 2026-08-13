@@ -158,9 +158,16 @@ def dominant_color_label(image_bytes: bytes) -> str:
     if mn > 210:
         return "white"
     if mx - mn < 25:
-        if mx < 100:
-            return "gray"
         return "white" if mx > 160 else "gray"
+    # Yellow: both R and G high, B clearly lower
+    if r > 160 and g > 130 and b < 80 and min(r, g) > b * 2.5:
+        return "yellow"
+    # Orange: R high, G moderate, B low
+    if r > 160 and 60 < g < 145 and b < 60:
+        return "orange"
+    # Purple: R and B both elevated, G lower
+    if r > 110 and b > 110 and g < (r + b) * 0.45:
+        return "purple"
     if r >= g and r >= b:
         return "red" if r > 90 else "brown"
     if g >= r and g >= b:
@@ -169,7 +176,11 @@ def dominant_color_label(image_bytes: bytes) -> str:
 
 
 def looks_low_information(image_bytes: bytes) -> bool:
-    """Heuristic: very dark / low-contrast frames are ambiguous to a person."""
+    """Heuristic: very dark frames are likely ambiguous to a person.
+
+    Solid-colour bright images are NOT ambiguous — only truly dark/underexposed
+    frames should trigger the uncertainty guard.
+    """
     try:
         from PIL import Image
         import numpy as np
@@ -177,4 +188,4 @@ def looks_low_information(image_bytes: bytes) -> bool:
         return False
     image = Image.open(io.BytesIO(image_bytes)).convert("L").resize((32, 32))
     arr = np.asarray(image, dtype=np.float32)
-    return float(arr.mean()) < 35 or float(arr.std()) < 12
+    return float(arr.mean()) < 35
