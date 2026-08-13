@@ -8,19 +8,22 @@
       "module": "uvicorn",
       "python": "/Users/test/Projects/gemi-brain/.venv/bin/python3.11",
       "cwd": "/Users/test/Projects/gemi-brain",
-      "console": "integratedTerminal",
-      "subProcess": true,
+      "console": "internalConsole",
       "env": {
         "PYDEVD_DISABLE_FILE_VALIDATION": "1"
       },
       "args": [
         "app.main:app",
-        "--reload",
         "--host",
-        "0.0.0.0",
+        "127.0.0.1",
         "--port",
-        "8001"
+        "8000"
       ],
+      "serverReadyAction": {
+        "pattern": "Uvicorn running on (https?://\\S+)",
+        "uriFormat": "%s/docs",
+        "action": "openExternally"
+      },
       "jinja": true,
       "justMyCode": true
     }

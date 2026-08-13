@@ -91,14 +91,33 @@ imports the legacy `pkg_resources` API.
 
 ### 3. Run the server
 
+From the editor, open **Run and Debug**, select **FastAPI: gemi-brain**, and
+press the play button. The task **Run Gemi Brain (localhost:8000)** starts the
+same server in a terminal without the debugger.
+
+From the command line:
+
 ```bash
 python run.py
 # or directly:
-uvicorn app.main:app --reload --port 8000
+uvicorn app.main:app --host 127.0.0.1 --port 8000
 ```
 
 The API is now available at `http://localhost:8000`.  
 Interactive docs: `http://localhost:8000/docs`
+
+Local runs bind `127.0.0.1:8000` and run as a single process, so stopping the
+debug session or terminal releases the port immediately. Auto-reload is opt-in
+because its watcher keeps a child process bound to the port:
+
+```bash
+APP_RELOAD=1 python run.py
+```
+
+The self-hosted deployment is a separate service on `0.0.0.0:${APP_PORT}`
+(`8765` by default) and keeps serving while local runs are stopped. If
+`http://localhost:8000` still answers after stopping, a previous run was left
+behind — check it with `lsof -nP -iTCP:8000 -sTCP:LISTEN`.
 
 ---
 
@@ -224,6 +243,9 @@ cp .env.example .env
 
 | Variable | Default | Description |
 |----------|---------|-------------|
+| `HOST` | `127.0.0.1` | Host interface used by `run.py` and `main.py` |
+| `PORT` | `8000` | Port used by `run.py` and `main.py` |
+| `APP_RELOAD` | `0` | Set to `1` to enable auto-reload for local development |
 | `DB_PATH` | `gemi_memory.db` | Path to the SQLite database file |
 | `OLLAMA_URL` | `http://localhost:11434/api/generate` | Ollama generation endpoint |
 | `OLLAMA_MODEL` | `openbmb/minicpm-o2.6` | Model to use for inference |

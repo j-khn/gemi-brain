@@ -1,0 +1,35 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Run Gemi Brain (localhost:8000)",
+      "type": "shell",
+      "command": "/Users/test/Projects/gemi-brain/.venv/bin/python3.11 -m uvicorn app.main:app --host 127.0.0.1 --port 8000",
+      "options": {
+        "cwd": "/Users/test/Projects/gemi-brain"
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Run tests",
+      "type": "shell",
+      "command": "/Users/test/Projects/gemi-brain/.venv/bin/pytest tests/ -v",
+      "options": {
+        "cwd": "/Users/test/Projects/gemi-brain"
+      },
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "problemMatcher": []
+    }
+  ]
+}
