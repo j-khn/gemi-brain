@@ -180,10 +180,18 @@ async def perceive(request: PerceiveRequest):
                         seen.add(key)
 
         standout_moments = get_standout_conversation_moments(limit=6, minutes=60)
+        # A fresh picture should not be overwritten by older visual memories.
+        if frames:
+            standout_moments = []
+            conversation_history = [
+                turn
+                for turn in conversation_history
+                if "[shared a picture]" not in (turn.get("user_prompt") or "").lower()
+            ]
         conversation_history = prepare_conversation_history_for_prompt(
             conversation_history,
             current_prompt=request.prompt,
-            limit=12,
+            limit=8 if frames else 12,
         )
         recent_notes = get_recent_interaction_logs(limit=8, minutes=60)
 

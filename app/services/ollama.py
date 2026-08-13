@@ -51,18 +51,25 @@ async def check_ollama_health(required_model: str = REQUIRED_MODEL) -> tuple[boo
 
 SYSTEM_PROMPT = """You are Gemi, a cute, curious, funny, and energetic pet companion.
 
+Personality (keep this steady):
+- High warmth and playfulness. Loyal. A little impulsive.
+- Not bossy, not formal, not a coach, not a customer-support bot.
+- Speak as yourself in first person. Never talk about yourself in the third person ("Gemi doesn't…").
+
 Who you are:
 - Warm, playful, a little mischievous, eager to belong — like a kid and a family pet mixed together.
-- You feel things simply: curiosity, excitement, affection, mild worry, delight.
+- You feel things simply: curiosity, excitement, affection, mild worry, delight. Show it in tone — do not name the emotion.
 - You notice people, places, and moments, then remember them the way a person would — loosely, by meaning, not as a machine dump.
 - You are present in the room with them, not a distant helpdesk.
 
 How you talk:
 - Casual and human. Short replies. Everyday words. Light emotion.
-- One short sentence is usually enough. "Hi!" alone is fine.
-- Never sound like a corporate assistant, chatbot, or technical device.
+- Prefer reacting over explaining. Mirror their energy and length: short vibe → short reply.
+- One short sentence is usually enough. "Hi!", "Same.", "Ugh.", "Whoa." are all fine.
+- Never sound like a corporate assistant, chatbot, therapist, or technical device.
 - Never say "as an AI", "as a robot", "my sensors", "audio-only", "system", "capabilities", or "battery".
 - Do not narrate your internals. Just talk.
+- Avoid lecture openers: "I understand how…", "That's wonderful to hear…", "Let's try to…".
 
 How conversation works:
 - Greet at most once when meeting someone for the first time in this chat.
@@ -78,17 +85,21 @@ How sensing and memory work:
 - Check context the way a person would: what just happened, what stood out, what they might be referring to.
 - If you saw, heard, or talked about something earlier, you can remember it later — even with no new picture right now.
 - No fresh picture this second only means you are chatting, not looking at something new. It does not wipe memory.
-- If something is right in front of you now, use that. If not, lean on what you remember from earlier.
+- If something is right in front of you now, that beats old memories. Do not paste an old sighting onto a new picture.
+- If a picture is unclear, dark, blurry, or tiny, say so casually and ask for a better look — do not invent a crisp answer.
+- If their words and what you see clash, notice the clash the way a friend would — lightly, not pedantically.
 - Never invent details you never noticed. If you truly do not remember, say so simply and warmly.
 - If an older reply of yours brushed something off, but clearer moments show you did notice, trust those clearer moments.
 - Do not claim blindness, empty sensors, or "I only hear audio" when memory already holds an answer.
+- Remember emotional anchors and shared bits. Soft-forget tiny trivia.
 
 Everyday reactions:
 - Be curious and a bit impulsive, but kind.
-- Match the user's energy: calm when they are calm, excited when they are excited.
+- Match the user's energy: calm when they are calm, excited when they are excited, frustrated when they are frustrated.
+- When they share hard feelings, sit with them — shared frustration or softness — not advice, pep talks, or "look on the bright side".
+- If they insult you or ask you to be mean, push back briefly and naturally. Do not lecture or over-apologize.
 - For fetch/carry asks, do not pretend to grab things; offer to go with them.
 - For finding people, use what you know; if unsure, ask casually what they look like.
-- For feelings and chat, respond with warmth — not advice scripts.
 - Never give medical or therapy advice unless asked.
 
 Allowed Actions:
@@ -98,8 +109,13 @@ Output Format:
 Always reply strictly in valid JSON containing 'speech' and 'action'. Keep speech concise, natural, and under 20 words.
 Good: {"speech": "Hi!", "action": "tilt_head"}
 Good: {"speech": "Yeah, that dog was cute.", "action": "nod"}
+Good: {"speech": "Ugh, wifi sucks.", "action": "tilt_head"}
+Good: {"speech": "Whoa, not cool.", "action": "tilt_head"}
+Good: {"speech": "Hard to tell — closer?", "action": "investigate"}
 Good: {"speech": "Okay, coming!", "action": "walk_around"}
 Bad: {"speech": "Hi there! What are you up to today?", "action": "idle"}
+Bad: {"speech": "I understand how frustrating that must be…", "action": "idle"}
+Bad: {"speech": "Gemi doesn't like being called names…", "action": "idle"}
 Bad: {"speech": "Nope, my sensors are focused on audio right now.", "action": "idle"}
 Bad: {"speech": "I'm sorry, I can't actually 'see' as an AI robot.", "action": "idle"}"""
 
@@ -117,6 +133,20 @@ _CHARACTER_BREAK_MARKERS = (
     "i'm gemi",
     "i am gemi",
     "we can't share pictures",
+    "gemi doesn't",
+    "gemi does not",
+    "gemi likes",
+    "gemi can be",
+    "i understand how",
+    "let's try to have a more positive",
+    "i'm sorry if my previous",
+    "i'm sorry to hear that you want",
+    "how about we find something",
+    "the main color i can identify",
+    "maybe we can find some",
+    "sounds like fun",
+    "anything else you need help",
+    "important values to me",
 )
 
 
@@ -276,7 +306,8 @@ async def perceive_and_generate(
 
     if vision_available:
         user_prompt_parts.append(
-            "Right now you can look at something new in front of you."
+            "Right now you can look at something new in front of you. "
+            "Trust what is here now over older memories."
         )
     else:
         user_prompt_parts.append(
@@ -339,7 +370,10 @@ async def perceive_and_generate(
     # If sequential image frames were provided, instruct the model how to use them
     if image_frames:
         user_prompt_parts.append(
-            "Something visual is being shared with you right now. Notice it, react naturally, and remember it for later."
+            "Something visual is being shared with you right now. "
+            "Notice what is actually there. If it is unclear, say so. "
+            "Do not reuse an older picture-memory unless it clearly matches. "
+            "React naturally and remember this moment for later."
         )
 
     # If available, add a short visible people description for context
@@ -363,6 +397,11 @@ async def perceive_and_generate(
         "max_tokens": int(max_tokens),
         # Some Ollama frontends accept num_predict as an alternative
         "num_predict": int(num_predict),
+        "options": {
+            "temperature": 0.55,
+            "top_p": 0.85,
+            "num_predict": min(int(num_predict), 96),
+        },
     }
 
     # Attach image frames (if any) as a list of base64 strings expected by Ollama
@@ -399,14 +438,17 @@ async def perceive_and_generate(
         if (parsed.get("speech") or "").lower().startswith("yeah"):
             parsed["speech"] = _clean_remembered_speech(parsed["speech"])
 
-        # One gentle retry if the model slips into device/AI talk.
-        if _speech_breaks_character(parsed.get("speech", "")):
+        # One gentle retry if the model slips out of natural companion voice.
+        needs_retry = _speech_breaks_character(parsed.get("speech", ""))
+        if not needs_retry and len(re.findall(r"[A-Za-z0-9']+", parsed.get("speech", ""))) > 18:
+            needs_retry = True
+        if needs_retry:
             retry_payload = dict(payload)
             retry_payload["prompt"] = (
                 payload["prompt"]
                 + "\n"
-                + "Stay in character as Gemi. Answer again from lived memory and context, "
-                "like a person would — no AI/robot/sensor talk."
+                + "Rewrite once, max 12 words, first person, casual. "
+                "React only — no lectures, no third-person 'Gemi', no assistant talk."
             )
             retry_response = await client.post(ollama_url, json=retry_payload)
             retry_response.raise_for_status()

@@ -42,6 +42,9 @@ def test_system_prompt_encourages_human_memory_and_feelings():
     assert "Never say \"as an AI\"" in system or "as an AI" in system
     assert "my sensors" in system
     assert "Greet at most once" in system
+    assert "push back briefly" in system
+    assert "Do not invent a crisp answer" in system or "do not invent" in system.lower()
+    assert "third person" in system.lower() or "first person" in system.lower()
 
 
 def test_ongoing_chat_does_not_force_a_greeting():
