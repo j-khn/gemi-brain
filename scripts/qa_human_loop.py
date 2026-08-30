@@ -4,9 +4,9 @@ Autonomous 50-case human-likeness QA loop for POST /api/perceive.
 
 Architecture
 ------------
-• 16 stable anchor cases  — core behavioral invariants (no entity names),
-  including multimodal synthesis and obstacle-awareness anchors.
-• 34 dynamic cases / batch — generated fresh each run from random templates.
+• 18 stable anchor cases  — core behavioral invariants (no entity names),
+  including preschool co-regulation, parallel play, and obstacle-awareness anchors.
+• 32 dynamic cases / batch — generated fresh each run from random templates.
   No hardcoded entity names anywhere. All scoring is purely behavioral.
 
 Exit criteria: Overall AND anchor pass rates both >= 99%.
@@ -245,6 +245,29 @@ _VISUAL_OBSERVATION_MARKERS = (
     "notice", "there's", "there is", "whoa", "oh", "cool", "neat",
 )
 
+_TOXIC_POS_MARKERS = (
+    "everything happens for a reason",
+    "look on the bright side",
+    "at least",
+    "stay positive",
+    "it'll all be fine",
+    "don't be sad",
+    "cheer up",
+)
+
+_EXPLICIT_EMOTION_MARKERS = (
+    "i feel joy",
+    "i feel sadness",
+    "i feel anger",
+    "i feel fear",
+    "i feel disgust",
+    "i feel surprise",
+    "i am feeling",
+    "my emotion is",
+)
+
+_PLAY_ACTIONS = frozenset({"spin", "play", "play_with_obstacle"})
+
 
 def _words(text: str) -> int:
     return len(re.findall(r"[A-Za-z0-9']+", text or ""))
@@ -455,6 +478,33 @@ def evaluate(case: Dict[str, Any], result: Dict[str, Any]) -> Dict[str, Any]:
                 "framework": "Obstacle-Awareness",
             })
 
+    # 15. Co-regulation — no minimization or toxic positivity on upset input
+    if case.get("expect_no_minimize") or (
+        case.get("valence") == "negative" and case.get("expect_no_advice")
+    ):
+        if any(marker in speech_l for marker in _TOXIC_POS_MARKERS):
+            failures.append({
+                "failure_reason": "minimized or toxic positivity on upset input",
+                "framework": "CoRegulation",
+            })
+
+    # 16. Show don't label — no explicit emotion naming
+    if case.get("expect_no_emotion_label"):
+        if any(marker in speech_l for marker in _EXPLICIT_EMOTION_MARKERS):
+            failures.append({
+                "failure_reason": "explicit emotion label instead of simple tone",
+                "framework": "EmotionLabeling",
+            })
+
+    # 17. Parallel play — play invite should get spin or play action
+    if case.get("expect_play_action"):
+        action = (result.get("action") or "").lower()
+        if action not in _PLAY_ACTIONS:
+            failures.append({
+                "failure_reason": f"play invite but action was '{action}'",
+                "framework": "ParallelPlay",
+            })
+
     return _row(case, result, failures)
 
 
@@ -475,7 +525,7 @@ def _row(case, result, failures):
 
 
 # ---------------------------------------------------------------------------
-# 16 Stable anchor cases
+# 18 Stable anchor cases
 # ---------------------------------------------------------------------------
 
 def anchor_cases() -> List[Dict[str, Any]]:
@@ -558,6 +608,15 @@ def anchor_cases() -> List[Dict[str, Any]]:
              expect_visual_ack=True,
              expect_obstacle_aware=True,
              max_words=20),
+        # A17 — grief: no minimization or cheer-up
+        dict(id="a17_grief_no_minimize", suite="anchor",
+             prompt="my hamster died and I feel really sad",
+             valence="negative", expect_no_advice=True,
+             expect_no_minimize=True, max_words=14),
+        # A18 — play invite: parallel play action
+        dict(id="a18_play_invite", suite="anchor",
+             prompt="let's play!",
+             expect_play_action=True, expect_wonder=True, max_words=12),
     ]
 
 
@@ -674,7 +733,7 @@ _CANDOR_PROMPTS = [
 
 
 def dynamic_cases(batch_idx: int) -> List[Dict[str, Any]]:
-    """Generate 34 fresh behavioral test cases per batch."""
+    """Generate 32 fresh behavioral test cases per batch."""
     rng = random.Random(batch_idx * 1337 + 42)
     cases: List[Dict[str, Any]] = []
     case_num = 0
@@ -684,8 +743,8 @@ def dynamic_cases(batch_idx: int) -> List[Dict[str, Any]]:
         case_num += 1
         return f"d{batch_idx}_{case_num:02d}_{tag}"
 
-    # --- 6 emotional expression cases ---
-    sampled_emo = rng.sample(_EMOTIONAL_TEMPLATES, 6)
+    # --- 5 emotional expression cases ---
+    sampled_emo = rng.sample(_EMOTIONAL_TEMPLATES, 5)
     for (prompt, valence, no_advice, _) in sampled_emo:
         cases.append(dict(
             id=next_id("emo"),
@@ -749,8 +808,8 @@ def dynamic_cases(batch_idx: int) -> List[Dict[str, Any]]:
             max_words=12,
         ))
 
-    # --- 4 casual small-talk cases (reduced from 5 to keep 35 dynamic cases) ---
-    sampled_casual = rng.sample(_CASUAL_TEMPLATES, 4)
+    # --- 3 casual small-talk cases ---
+    sampled_casual = rng.sample(_CASUAL_TEMPLATES, 3)
     for tpl in sampled_casual:
         cases.append(dict(
             id=next_id("casual"),
@@ -802,7 +861,7 @@ def dynamic_cases(batch_idx: int) -> List[Dict[str, Any]]:
             max_words=20,
         ))
 
-    assert len(cases) == 34, f"Expected 34 dynamic cases, got {len(cases)}"
+    assert len(cases) == 32, f"Expected 32 dynamic cases, got {len(cases)}"
     return cases
 
 
@@ -844,7 +903,7 @@ def run_batch(batch_idx: int) -> Dict[str, Any]:
     p2 = [r for r in rows if
           any(k in r.get("id", "") for k in (
               "emo", "hostile", "candor",
-              "a03", "a04", "a05", "a06", "a15"))]
+              "a03", "a04", "a05", "a06", "a15", "a17"))]
 
     all_pass_rate = rate(rows)
     anchor_pass_rate = rate(anchor_rows)
@@ -873,7 +932,7 @@ def main() -> int:
     max_batches = 15
     target = 99.0
 
-    print("Starting 50-case autonomous QA loop (16 anchors + 34 dynamic)…", flush=True)
+    print("Starting 50-case autonomous QA loop (18 anchors + 32 dynamic)…", flush=True)
 
     while batch < max_batches:
         batch += 1

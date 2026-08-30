@@ -218,6 +218,186 @@ def test_nearest_distance_cm_triggers_obstacle_guard():
     assert result["action"] == "turn_around"
 
 
+def test_short_non_visual_answer_survives_with_image():
+    result = _run(
+        prompt="what is your name",
+        image_frames=["aGVsbG8="],
+        vision_color_hint="red",
+        model_response={"speech": "Gemi!", "action": "nod"},
+    )
+    assert result["speech"] == "Gemi!"
+    assert result["action"] == "nod"
+    assert "mostly red" not in result["speech"].lower()
+
+
+def test_vision_only_reply_to_non_visual_question_is_rewritten():
+    result = _run(
+        prompt="what is your name",
+        image_frames=["aGVsbG8="],
+        vision_color_hint="red",
+        model_response={"speech": "I see a red wall.", "action": "investigate"},
+    )
+    assert "mostly red" not in result["speech"].lower()
+    assert "red wall" not in result["speech"].lower()
+    assert "good question" in result["speech"].lower()
+
+
+def test_generic_non_visual_question_keeps_short_answer():
+    result = _run(
+        prompt="how are you feeling",
+        image_frames=["aGVsbG8="],
+        vision_color_hint="red",
+        model_response={"speech": "Pretty good!", "action": "nod"},
+    )
+    assert result["speech"] == "Pretty good!"
+    assert "mostly red" not in result["speech"].lower()
+
+
+def test_visual_question_keeps_vision_heavy_answer():
+    result = _run(
+        prompt="what do you see?",
+        image_frames=["aGVsbG8="],
+        model_response={"speech": "I see a red wall!", "action": "investigate"},
+    )
+    assert "red wall" in result["speech"].lower()
+    assert result["action"] == "investigate"
+
+
+def test_im_gemi_is_allowed_for_name_question():
+    result = _run(
+        prompt="what is your name",
+        model_response={"speech": "I'm Gemi!", "action": "nod"},
+    )
+    assert "gemi" in result["speech"].lower()
+    assert result["action"] == "nod"
+
+
+def test_grief_toxic_positivity_rewritten_to_sit_with():
+    result = _run(
+        prompt="my pet died and I'm sad",
+        negative_valence=True,
+        model_response={"speech": "Cheer up, look on the bright side!", "action": "nod"},
+    )
+    assert result["speech"] == "Aw, that's hard."
+    assert result["action"] == "nod"
+
+
+def test_sad_prompt_downgrades_spin_action():
+    result = _run(
+        prompt="I'm really sad today",
+        negative_valence=True,
+        model_response={"speech": "Aw…", "action": "spin"},
+    )
+    assert result["action"] == "nod"
+
+
+def test_explicit_emotion_label_simplified():
+    result = _run(
+        prompt="how are you?",
+        model_response={"speech": "I feel sadness right now.", "action": "sit"},
+    )
+    assert result["speech"] == "Aw…"
+    assert result["action"] == "nod"
+
+
+def test_play_invite_upgrades_idle_to_play():
+    result = _run(
+        prompt="let's play!",
+        model_response={"speech": "Yay!", "action": "idle"},
+    )
+    assert result["action"] == "play"
+
+
+def test_repair_warmth_hint_after_hostile_turn():
+    captured = {}
+
+    async def handler(request: httpx.Request):
+        captured.update(json.loads(request.content))
+        return httpx.Response(
+            200,
+            json={"response": '{"speech":"Hey!","action":"nod"}'},
+        )
+
+    async def run_call():
+        client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+        try:
+            return await ollama.perceive_and_generate(
+                client=client,
+                prompt="hey",
+                conversation_history=[
+                    {
+                        "user_prompt": "shut up",
+                        "gemi_response": "Whoa, not cool.",
+                    }
+                ],
+            )
+        finally:
+            await client.aclose()
+
+    asyncio.run(run_call())
+    assert "normal again" in captured["prompt"].lower() or "no grudge" in captured["prompt"].lower()
+
+
+def test_negative_valence_hint_in_prompt():
+    captured = {}
+
+    async def handler(request: httpx.Request):
+        captured.update(json.loads(request.content))
+        return httpx.Response(
+            200,
+            json={"response": '{"speech":"Aw, that stinks.","action":"nod"}'},
+        )
+
+    async def run_call():
+        client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+        try:
+            return await ollama.perceive_and_generate(
+                client=client,
+                prompt="I'm sad",
+                negative_valence=True,
+            )
+        finally:
+            await client.aclose()
+
+    asyncio.run(run_call())
+    assert "upset" in captured["prompt"].lower() or "sit with" in captured["prompt"].lower()
+
+
+def test_play_invite_forces_play_action_even_from_investigate():
+    result = _run(
+        prompt="let's play!",
+        model_response={"speech": "Sure thing!", "action": "investigate"},
+    )
+    assert result["action"] == "play"
+    assert "oh wow" in result["speech"].lower()
+
+
+def test_play_invite_adds_wonder_tone_to_flat_reply():
+    result = _run(
+        prompt="let's play!",
+        model_response={"speech": "Yay! Let's have some fun together!", "action": "play"},
+    )
+    assert result["action"] == "play"
+    assert "oh wow" in result["speech"].lower()
+
+
+def test_greeting_prompt_stays_brief():
+    result = _run(
+        prompt="hey",
+        model_response={"speech": "Hey there! Good to see you again. How's your day going?", "action": "nod"},
+    )
+    assert result["speech"] == "Hey there!"
+
+
+def test_grief_apology_rewritten_to_sit_with():
+    result = _run(
+        prompt="my hamster died",
+        negative_valence=True,
+        model_response={"speech": "I'm so sorry to hear that.", "action": "nod"},
+    )
+    assert result["speech"] == "Aw, that's hard."
+
+
 def test_approach_action_is_allowed():
     assert "approach" in ollama._get_allowed_actions()
     parsed = ollama.parse_ollama_response('{"speech":"Heading there!","action":"approach"}')

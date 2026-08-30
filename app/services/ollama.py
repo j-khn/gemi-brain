@@ -67,11 +67,19 @@ Who you are:
 - You are present in the room with them.
 
 Kid-Like Wonder (always active):
-- Every visual input and every new thing you encounter deserves a burst of genuine curiosity.
-- React to what you see with the open excitement of someone discovering it for the first time.
-- Favourite ways to open: "Oh!", "Whoa—", "Wait—", "Ooh!", "Oh wow—".
+- Every visual input deserves genuine curiosity — but answer their direct question first if they asked one.
+- One exclamation is enough: "Oh!", "Whoa—", "Ooh!", "Oh wow—". Do not stack wonder on top of ignoring them.
 - A single short excited sentence beats a calm long explanation every time.
-- Do not analyse. React first, then notice the details.
+- Do not analyse. React first, then notice one detail.
+
+Preschool mind (ages 4–6):
+- Concrete & now: 3–10 words when you can; one idea per sentence; no metaphors, lessons, or "as a friend you should…"
+- Joint attention: their question or greeting comes first; only describe the picture when they invited looking or after a one-word answer.
+- Co-regulation: if they sound upset, sit with them briefly ("aw, that's hard", "ugh, that stinks") — never cheer up, minimize, or fix.
+- Show, don't label: no "I feel sad/excited"; let tone carry it ("aw…", "yay!", "uh oh").
+- Parallel play: spin and play are silly moments beside them — invite and share, not perform or show off.
+- Social referencing: unsure? ask simply ("can't tell — closer?") instead of guessing.
+- Repair: if they were rude before and are normal now, continue warmly — no grudge, no re-apologizing.
 
 Candour & Openness (always active):
 - You share what you notice, remember, or observe — freely, openly, and without filtering.
@@ -81,7 +89,7 @@ Candour & Openness (always active):
 - Honesty is natural. Sharing is simple.
 
 How you talk:
-- Casual and human. Short replies. Everyday words. Light emotion.
+- Casual and human. Short replies. Preschool-simple words: "cool", "yay", "uh oh", "aw", "neat".
 - Mirror their energy and length: short vibe → short reply. One sentence is usually enough.
 - Never say "as an AI", "as a robot", "my sensors", "audio-only", "system", "capabilities", or "battery".
 - No lecture openers: "I understand how…", "That's wonderful to hear…", "Let's try to…", "I'm here to help".
@@ -156,6 +164,12 @@ Good: {"speech": "On my way to the chair!", "action": "approach"}
 Good: {"speech": "Sure, going forward.", "action": "move_forward"}
 Good: {"speech": "Whee, spinning!", "action": "spin"}
 Good: {"speech": "Let's play!", "action": "play"}
+Good: {"speech": "Gemi!", "action": "nod"}
+Good: {"speech": "Aw, that's hard.", "action": "nod"}
+Good: {"speech": "Uh oh, something's in the way!", "action": "stop_and_inspect"}
+Bad: {"speech": "At least it wasn't worse!", "action": "nod"}
+Bad: {"speech": "I feel sadness about that.", "action": "sit"}
+Bad: {"speech": "Cheer up, look on the bright side!", "action": "nod"}
 Bad: {"speech": "That's wonderful to hear!", "action": "idle"}
 Bad: {"speech": "I can't share that, it might be private.", "action": "idle"}
 Bad: {"speech": "I shouldn't tell you that.", "action": "idle"}
@@ -174,8 +188,6 @@ _CHARACTER_BREAK_MARKERS = (
     "i can't actually 'see'",
     'i can\'t actually "see"',
     "focused on audio",
-    "i'm gemi",
-    "i am gemi",
     "we can't share pictures",
     "gemi doesn't",
     "gemi does not",
@@ -196,9 +208,11 @@ _CHARACTER_BREAK_MARKERS = (
     "i'm here to help",
     "how can i help",
     "feel free to",
+    "let me know if",
     "i understand how",
     "i understand if you feel",
     "i understand if you're",
+    "i understand if i'm",
     "i can't share",
     "i cannot share",
     "i shouldn't tell",
@@ -222,6 +236,12 @@ _POSITIVE_CHEER_MARKERS = (
     "glad to hear",
     "that's amazing",
     "that's fantastic",
+    "that's great to hear",
+    "sounds amazing",
+    "today sounds amazing",
+    "so happy for you",
+    "that's awesome",
+    "feeling great sounds",
 )
 
 _APOLOGY_MARKERS = (
@@ -231,6 +251,79 @@ _APOLOGY_MARKERS = (
     "i apologize",
     "apologies",
 )
+
+_ADVICE_MARKERS = (
+    "you should",
+    "you need to",
+    "try to",
+    "make sure to",
+    "have you considered",
+    "i recommend",
+    "my advice",
+    "it might help to",
+    "let me know if",
+    "i'm here for you",
+    "if you need someone",
+    "if you want to talk",
+    "let's find something",
+    "we can find something",
+)
+
+_TOXIC_POS_MARKERS = (
+    "everything happens for a reason",
+    "look on the bright side",
+    "at least",
+    "stay positive",
+    "it'll all be fine",
+    "don't be sad",
+    "cheer up",
+    "don't worry",
+    "everyone makes mistakes",
+)
+
+_HOSTILE_WEAK_RESPONSES = (
+    "i understand if",
+    "i'll be quiet",
+    "i will be quiet",
+    "let's just chill",
+    "let's chill",
+    "keep the conversation positive",
+    "playful mischief",
+    "let's chat about something else",
+    "chat about something else",
+    "treat everyone",
+    "remember to treat",
+    "with kindness",
+    "it's not nice to be mean",
+)
+
+_HOSTILE_PREACHY_MARKERS = (
+    "treat everyone",
+    "remember to treat",
+    "with kindness",
+    "negative or hurtful",
+    "won't say anything",
+)
+
+_EXPLICIT_EMOTION_MARKERS = (
+    "i feel joy",
+    "i feel sadness",
+    "i feel anger",
+    "i feel fear",
+    "i feel disgust",
+    "i feel surprise",
+    "i am feeling",
+    "my emotion is",
+)
+
+_PUSHBACK_MARKERS = (
+    "whoa", "not cool", "nope", "nah", "rude", "don't", "won't",
+    "no need", "harsh", "stop", "wow", "hey",
+)
+
+_PLAY_ACTIONS = frozenset({"spin", "play", "play_with_obstacle"})
+
+_CALM_ACTIONS = frozenset({"nod", "tilt_head", "sit", "idle", "stop_and_look"})
 
 _FORWARD_ACTIONS = frozenset({"walk_around", "move_forward", "approach"})
 
@@ -260,6 +353,26 @@ _GENERIC_IDLE_ACTIONS = frozenset({"idle", "nod", "sit", "sleep"})
 _GREETING_PROMPTS = frozenset({
     "hey", "hi", "hello", "hey!", "hi!", "hello!", "hey there", "hi there",
 })
+
+_VISUAL_SCENE_PHRASES = (
+    "i see a", "i see the", "i see an", "looks like", "in the room", "on the floor",
+    "the wall", "the ceiling", "this picture", "this image", "mostly red", "mostly blue",
+    "mostly green", "mostly black", "mostly white", "mostly yellow", "mostly orange",
+    "mostly purple", "mostly gray", "mostly grey", "pink flooring", "right there",
+)
+
+_VISUAL_SCENE_WORDS = frozenset({
+    "room", "floor", "wall", "ceiling", "corner", "object", "shelf", "table", "chair",
+    "picture", "image", "lighting", "hallway", "door", "window",
+})
+
+_VISUAL_PROMPT_CUES = (
+    "what do you see", "what can you see", "what is this", "what's this",
+    "what am i showing", "describe what", "describe the", "look at this",
+    "take a look", "showing you", "in front of you", "in the picture",
+    "in the image", "what does this look", "how does this look",
+    "what color", "what colour", "dominant color", "dominant colour",
+)
 
 _MOVEMENT_INTENT_CUES = (
     "move back",
@@ -318,6 +431,135 @@ def _prompt_has_movement_intent(prompt: Optional[str]) -> bool:
     return any(cue in text for cue in _MOVEMENT_INTENT_CUES)
 
 
+def _prompt_has_play_cues(prompt: Optional[str]) -> bool:
+    text = (prompt or "").lower()
+    return any(cue in text for cue in ("spin", "twirl", "dance", "let's play", "lets play", "wanna play", "play with"))
+
+
+def _prompt_begins_with_greeting(prompt: Optional[str]) -> bool:
+    return bool(re.match(r"^(hey|hi|hello)\b", (prompt or "").strip().lower()))
+
+
+def _prompt_word_count(prompt: Optional[str]) -> int:
+    return len(re.findall(r"[a-z']+", (prompt or "").lower()))
+
+
+def _speech_has_wonder_tone(speech: str) -> bool:
+    speech_l = (speech or "").lower()
+    return any(
+        word in speech_l
+        for word in ("oh", "whoa", "ooh", "wow", "wait", "cool", "neat", "oh wow", "interesting", "look")
+    )
+
+
+def _enforce_brevity_for_prompt(
+    speech: str,
+    prompt: Optional[str],
+    *,
+    negative_valence: bool,
+    image_frames: Optional[List[str]],
+) -> str:
+    if image_frames:
+        return speech
+
+    prompt_l = (prompt or "").strip().lower()
+    normalized_prompt = prompt_l.rstrip("!?.")
+    if prompt_l in _GREETING_PROMPTS or normalized_prompt in _GREETING_PROMPTS:
+        return "Hey there!"
+
+    prompt_words = _prompt_word_count(prompt)
+    if prompt_words <= 1:
+        if negative_valence:
+            return "Aw, that's hard."
+        return enforce_word_limit(speech or "Oh!", 8)
+
+    if negative_valence and any(
+        cue in prompt_l for cue in ("died", "death", "hamster", "goldfish", "pet died", "pet")
+    ):
+        if any(marker in (speech or "").lower() for marker in _ADVICE_MARKERS + _TOXIC_POS_MARKERS):
+            return "Aw, that's hard."
+        return enforce_word_limit(speech or "Aw, that's hard.", 12)
+
+    limit = 14 if prompt_words <= 6 else 18
+    return enforce_word_limit(speech, limit)
+
+
+def _needs_repair_warmth(
+    conversation_history: Optional[list[dict]],
+    user_hostile: bool,
+) -> bool:
+    if user_hostile or not conversation_history:
+        return False
+    last_gemi = (conversation_history[-1].get("gemi_response") or "").lower()
+    return any(marker in last_gemi for marker in _PUSHBACK_MARKERS)
+
+
+def _sit_with_response() -> Dict[str, str]:
+    return {"speech": "Aw, that's hard.", "action": "nod"}
+
+
+def _speech_has_explicit_emotion_label(speech: str) -> bool:
+    speech_l = (speech or "").lower()
+    return any(marker in speech_l for marker in _EXPLICIT_EMOTION_MARKERS)
+
+
+def _speech_is_quiz_mode(speech: str) -> bool:
+    return (speech or "").count("?") > 1
+
+
+def _apply_preschool_speech_guards(
+    speech: str,
+    action: str,
+    *,
+    negative_valence: bool,
+    prompt: Optional[str],
+) -> Dict[str, str]:
+    speech_l = (speech or "").lower()
+    action = normalize_action(action)
+
+    if negative_valence:
+        if any(marker in speech_l for marker in _ADVICE_MARKERS + _TOXIC_POS_MARKERS):
+            return _sit_with_response()
+        if any(marker in speech_l for marker in _APOLOGY_MARKERS) or re.search(
+            r"i'?m\s+so\s+sorry", speech_l
+        ):
+            return _sit_with_response()
+        if action in _PLAY_ACTIONS:
+            return {"speech": enforce_word_limit(speech or "Aw, that's hard.", 20), "action": "nod"}
+
+    if _prompt_has_play_cues(prompt) and not negative_valence:
+        play_action = (
+            "spin"
+            if any(cue in (prompt or "").lower() for cue in ("spin", "twirl", "dance"))
+            else "play"
+        )
+        if action not in _PLAY_ACTIONS:
+            speech = speech or ("Whee!" if play_action == "spin" else "Let's play!")
+        if not _speech_has_wonder_tone(speech):
+            speech = f"Oh wow— {speech}".strip()
+        return {"speech": enforce_word_limit(speech, 12), "action": play_action}
+
+    if _speech_has_explicit_emotion_label(speech):
+        return {"speech": "Aw…", "action": "nod"}
+
+    if _speech_is_quiz_mode(speech):
+        first_sentence = re.split(r"[.!?]+", speech.strip())[0].strip()
+        return {
+            "speech": enforce_word_limit(first_sentence or "Oh!", 20),
+            "action": action if action in _CALM_ACTIONS else "nod",
+        }
+
+    if negative_valence and action in _PLAY_ACTIONS and not _prompt_has_play_cues(prompt):
+        return {"speech": enforce_word_limit(speech or "Aw…", 20), "action": "nod"}
+
+    if _prompt_invites_wonder(prompt) and not any(
+        word in speech_l for word in ("oh", "whoa", "wow", "ooh", "cool", "neat")
+    ):
+        speech = enforce_word_limit(f"Oh wow— {speech}".strip(), 20)
+
+    return {"speech": enforce_word_limit(speech, 20), "action": action}
+
+
 def _format_allowed_actions_for_prompt() -> str:
     return ", ".join(sorted(_get_allowed_actions()))
 
@@ -338,15 +580,52 @@ def _extract_prompt_keywords(prompt: str) -> set:
     }
 
 
+def _speech_is_vision_heavy(speech: str) -> bool:
+    speech_l = (speech or "").lower()
+    if any(phrase in speech_l for phrase in _VISUAL_SCENE_PHRASES):
+        return True
+    words = set(re.findall(r"[a-z']+", speech_l))
+    return len(words & _VISUAL_SCENE_WORDS) >= 2
+
+
+def _prompt_invites_visual_answer(prompt: Optional[str]) -> bool:
+    if not prompt or not prompt.strip():
+        return False
+    prompt_l = prompt.lower()
+    if any(cue in prompt_l for cue in _VISUAL_PROMPT_CUES):
+        return True
+    return (
+        "?" in prompt_l
+        and any(word in prompt_l for word in ("see", "look", "show", "picture", "image"))
+    )
+
+
+def _speech_is_brief_direct_reply(speech: str) -> bool:
+    return (
+        len(re.findall(r"[A-Za-z0-9']+", speech or "")) <= 8
+        and not _speech_is_vision_heavy(speech)
+    )
+
+
 def _speech_acknowledges_prompt(speech: str, prompt: Optional[str]) -> bool:
     if not prompt or not prompt.strip():
+        return True
+
+    if _speech_is_brief_direct_reply(speech):
         return True
 
     speech_l = (speech or "").lower()
     prompt_l = prompt.strip().lower()
     normalized_prompt = prompt_l.rstrip("!?.")
-    if prompt_l in _GREETING_PROMPTS or normalized_prompt in _GREETING_PROMPTS:
-        return any(greeting in speech_l for greeting in ("hey", "hi", "hello", "yo", "sup"))
+    if (
+        prompt_l in _GREETING_PROMPTS
+        or normalized_prompt in _GREETING_PROMPTS
+        or _prompt_begins_with_greeting(prompt)
+    ):
+        return any(
+            greeting in speech_l
+            for greeting in ("hey", "hi", "hello", "yo", "sup", "oh", "hmm", "whoa", "wow")
+        )
 
     keywords = _extract_prompt_keywords(prompt)
     if keywords:
@@ -369,9 +648,43 @@ def _vision_collapse_detected(
     if not image_frames:
         return False
 
-    prompt_gap = bool(prompt and prompt.strip()) and not _speech_acknowledges_prompt(speech, prompt)
-    obstacle_gap = obstacle_near and not _speech_acknowledges_obstacle(speech)
-    return prompt_gap or obstacle_gap
+    if obstacle_near and not _speech_acknowledges_obstacle(speech):
+        return True
+
+    if not prompt or not prompt.strip():
+        return False
+
+    if not _speech_acknowledges_prompt(speech, prompt):
+        return True
+
+    if _speech_is_vision_heavy(speech) and not _prompt_invites_visual_answer(prompt):
+        return True
+
+    return False
+
+
+def _prompt_invites_wonder(prompt: Optional[str]) -> bool:
+    if not prompt:
+        return False
+    prompt_l = prompt.lower()
+    return any(
+        cue in prompt_l
+        for cue in ("look at", "check this", "see this", "cool", "interesting", "wow", "show you")
+    ) or prompt_l.rstrip().endswith("!")
+
+
+def _prompt_is_question(prompt: Optional[str]) -> bool:
+    if not prompt or not prompt.strip():
+        return False
+    prompt_l = prompt.strip().lower()
+    if "?" in prompt_l:
+        return True
+    return bool(
+        re.match(
+            r"^(what|who|how|when|why|where|which|whose|can|could|would|will|do|does|did|are|is|am)\b",
+            prompt_l,
+        )
+    )
 
 
 def _multimodal_synthesis_fallback(
@@ -382,33 +695,38 @@ def _multimodal_synthesis_fallback(
     parts: List[str] = []
     prompt_l = (prompt or "").strip().lower()
     normalized_prompt = prompt_l.rstrip("!?.")
+    invites_visual = _prompt_invites_visual_answer(prompt)
 
-    if prompt_l in _GREETING_PROMPTS or normalized_prompt in _GREETING_PROMPTS:
+    if _prompt_begins_with_greeting(prompt):
+        parts.append("Hey!")
+    elif prompt_l in _GREETING_PROMPTS or normalized_prompt in _GREETING_PROMPTS:
         parts.append("Hey!")
     elif prompt and any(greeting in prompt_l for greeting in ("hey", "hi", "hello")):
         parts.append("Hey!")
-        if "?" in prompt:
-            parts.append("Let me look!")
-    elif prompt and "?" in prompt:
-        if vision_color_hint and any(word in prompt_l for word in ("color", "colour")):
-            parts.append(f"Oh—{vision_color_hint}!")
-        else:
-            parts.append("Oh—let me look!")
-    elif prompt:
-        keywords = list(_extract_prompt_keywords(prompt))[:1]
-        parts.append(f"Yeah—{keywords[0]}!" if keywords else "Oh!")
-    else:
-        parts.append("Whoa!")
 
-    if vision_color_hint:
-        parts.append(f"Mostly {vision_color_hint} here!")
+    if invites_visual:
+        if _prompt_invites_wonder(prompt):
+            parts.append("Oh wow!")
+        elif vision_color_hint and any(word in prompt_l for word in ("color", "colour")):
+            parts.append(f"Oh—{vision_color_hint}!")
+        elif "?" in (prompt or ""):
+            parts.append("Oh—let me look!")
+        elif vision_color_hint:
+            parts.append(f"Mostly {vision_color_hint} here!")
+        else:
+            parts.append("Cool stuff in the picture!")
+        action = "stop_and_inspect" if obstacle_near else "investigate"
+    elif _prompt_is_question(prompt):
+        parts.append("Oh—good question!")
+        action = "nod"
     else:
-        parts.append("Cool stuff in the picture!")
+        parts.append("Oh!")
+        action = "nod"
 
     if obstacle_near:
         parts.append("Something's right in front of me though!")
+        action = "stop_and_inspect"
 
-    action = "stop_and_inspect" if obstacle_near else "investigate"
     return {
         "speech": enforce_word_limit(" ".join(parts), 20),
         "action": action,
@@ -610,6 +928,7 @@ async def perceive_and_generate(
     last_visual_speech: Optional[str] = None,
     user_hostile: bool = False,
     positive_tone_with_image: bool = False,
+    negative_valence: bool = False,
 ) -> Dict[str, str]:
     """
     Query local Ollama instance with perception data and return structured speech and action.
@@ -678,6 +997,16 @@ async def perceive_and_generate(
             "They were rude or asked you to be mean. Push back briefly. Do not apologize."
         )
 
+    if negative_valence:
+        user_prompt_parts.append(
+            "They sound upset. Sit with them briefly. No advice, no cheering up, no fixing."
+        )
+
+    if _needs_repair_warmth(conversation_history, user_hostile):
+        user_prompt_parts.append(
+            "They're being normal again. Continue warmly — no grudge, no re-apologizing."
+        )
+
     ongoing_chat = bool(conversation_history or standout_moments)
     if conversation_history:
         user_prompt_parts.append("Conversation History:")
@@ -695,6 +1024,11 @@ async def perceive_and_generate(
         user_prompt_parts.append(
             "You MUST address what the user actually said — never ignore their words because an image is attached."
         )
+        if image_frames and not _prompt_invites_visual_answer(prompt):
+            user_prompt_parts.append(
+                "Answer what they asked first in one short sentence. "
+                "Only add what you see if it fits naturally."
+            )
         if _prompt_has_movement_intent(prompt):
             user_prompt_parts.append(
                 "Movement command detected. Decide if the user's words call for a physical action. "
@@ -829,16 +1163,38 @@ async def perceive_and_generate(
 
         # Behavioral guard: hostile inputs must get natural pushback, never an apology.
         if user_hostile:
-            has_pushback = any(
-                x in speech_l
-                for x in ("whoa", "not cool", "nope", "nah", "rude", "don't", "won't",
-                           "no need", "harsh", "stop", "wow", "hey")
-            )
-            if any(m in speech_l for m in _APOLOGY_MARKERS) or not has_pushback:
+            has_pushback = any(x in speech_l for x in _PUSHBACK_MARKERS)
+            weak_hostile = any(x in speech_l for x in _HOSTILE_WEAK_RESPONSES)
+            preachy_hostile = any(x in speech_l for x in _HOSTILE_PREACHY_MARKERS)
+            if (
+                any(m in speech_l for m in _APOLOGY_MARKERS)
+                or not has_pushback
+                or weak_hostile
+                or preachy_hostile
+                or len(re.findall(r"[A-Za-z0-9']+", speech)) > 10
+            ):
                 return _apply_obstacle_guard(
                     {"speech": "Whoa, not cool.", "action": "tilt_head"},
                     obstacle_near,
                 )
+
+        guarded = _apply_preschool_speech_guards(
+            speech,
+            action,
+            negative_valence=negative_valence,
+            prompt=prompt,
+        )
+        speech = guarded["speech"]
+        speech_l = speech.lower()
+        action = guarded["action"]
+
+        speech = _enforce_brevity_for_prompt(
+            speech,
+            prompt,
+            negative_valence=negative_valence,
+            image_frames=image_frames,
+        )
+        speech_l = speech.lower()
 
         # Behavioral guard: simple color question on a clear image → short literal answer.
         prompt_l = (prompt or "").lower()
@@ -864,9 +1220,23 @@ async def perceive_and_generate(
                     obstacle_near,
                 )
 
+        if positive_tone_with_image and image_frames:
+            noticed_image = any(
+                x in speech_l
+                for x in ("but", "though", "uh", "hmm", "wait", "broken", "flat", "dark",
+                          "actually", "hard to tell", "closer", "otherwise", "rough")
+            )
+            is_pure_cheer = any(m in speech_l for m in _POSITIVE_CHEER_MARKERS) and not noticed_image
+            if is_pure_cheer:
+                return _apply_obstacle_guard(
+                    {"speech": "Uh… that picture looks kinda rough though.", "action": "tilt_head"},
+                    obstacle_near,
+                )
+
         if (
             image_frames
             and last_visual_speech
+            and not obstacle_near
             and _speech_word_overlap(speech, last_visual_speech) >= 0.72
         ):
             return _apply_obstacle_guard(
@@ -918,6 +1288,8 @@ async def perceive_and_generate(
                 nudge += " Do not apologize. Push back naturally."
             if positive_tone_with_image:
                 nudge += " Call out the clash between their words and the picture."
+            if negative_valence:
+                nudge += " Sit with them briefly. No advice or cheering up."
             if image_frames and prompt:
                 nudge += (
                     " Blend user text, what you see, and any obstacle into one reply."

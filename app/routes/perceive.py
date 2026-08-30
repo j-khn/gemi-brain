@@ -275,6 +275,35 @@ async def perceive(request: PerceiveRequest):
                 "everything is perfect",
             )
         )
+        negative_valence = any(
+            cue in prompt_l
+            for cue in (
+                "sad",
+                "died",
+                "death",
+                "lost",
+                "hurt",
+                "scared",
+                "angry",
+                "upset",
+                "cry",
+                "crying",
+                "frustrated",
+                "bored",
+                "ugh",
+                "failed",
+                "crashed",
+                "fired",
+                "cancelled",
+                "lonely",
+                "worried",
+                "scary",
+                "broken",
+                "miss",
+                "goldfish",
+                "pet died",
+            )
+        )
 
         # ------------------------------------------------------------------
         # 3. Build enriched prompt (inject mismatch warning if needed)
@@ -316,6 +345,7 @@ async def perceive(request: PerceiveRequest):
             last_visual_speech=last_visual_speech or None,
             user_hostile=user_hostile,
             positive_tone_with_image=bool(positive_tone and frames),
+            negative_valence=negative_valence,
         )
 
         speech = result.get("speech", "Hmm?")

@@ -1,6 +1,44 @@
 [
   {
     "batch": 1,
+    "pass_rate": 92.0,
+    "anchor_pass_rate": 94.4,
+    "phase1_rate": 84.0,
+    "phase2_rate": 100.0,
+    "failure_ids": [
+      "a16_multimodal_obstacle",
+      "d1_17_incongruent",
+      "d1_18_incongruent",
+      "d1_29_obstacle"
+    ]
+  },
+  {
+    "batch": 2,
+    "pass_rate": 90.0,
+    "anchor_pass_rate": 100.0,
+    "phase1_rate": 96.0,
+    "phase2_rate": 82.4,
+    "failure_ids": [
+      "d2_21_hostile",
+      "d2_22_hostile",
+      "d2_23_hostile",
+      "d2_24_casual",
+      "d2_27_wonder"
+    ]
+  },
+  {
+    "batch": 3,
+    "pass_rate": 96.0,
+    "anchor_pass_rate": 100.0,
+    "phase1_rate": 100.0,
+    "phase2_rate": 88.2,
+    "failure_ids": [
+      "d3_21_hostile",
+      "d3_22_hostile"
+    ]
+  },
+  {
+    "batch": 4,
     "pass_rate": 100.0,
     "anchor_pass_rate": 100.0,
     "phase1_rate": 100.0,
