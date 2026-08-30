@@ -142,8 +142,13 @@ def init_db() -> None:
                 "stop_and_look",
                 "idle",
                 "nod",
+                "move_back",
+                "move_forward",
+                "approach",
             ]), "json", "Allowed action set for robot responses"),
         }
+
+        import json as _json
 
         for k, (v, t, d) in defaults.items():
             cursor.execute("SELECT 1 FROM settings WHERE key = ?", (k,))
@@ -153,6 +158,28 @@ def init_db() -> None:
                     (k, str(v), t, d),
                 )
         conn.commit()
+
+        movement_actions = ["move_back", "move_forward", "approach"]
+        cursor.execute("SELECT value FROM settings WHERE key = 'allowed_actions'")
+        allowed_row = cursor.fetchone()
+        if allowed_row:
+            try:
+                current_actions = _json.loads(allowed_row["value"])
+                if isinstance(current_actions, list):
+                    merged = list(current_actions)
+                    changed = False
+                    for action in movement_actions:
+                        if action not in merged:
+                            merged.append(action)
+                            changed = True
+                    if changed:
+                        cursor.execute(
+                            "UPDATE settings SET value = ? WHERE key = 'allowed_actions'",
+                            (_json.dumps(merged),),
+                        )
+                        conn.commit()
+            except Exception:
+                pass
 
 
 def get_person_context(person_name: Optional[str] = None) -> str:

@@ -101,8 +101,51 @@ def test_repeated_visual_speech_is_replaced():
     assert result["action"] == "investigate"
 
 
-def test_obstacle_is_near_accepts_common_sensor_shapes():
-    assert ollama._obstacle_is_near({"obstacle": True})
-    assert ollama._obstacle_is_near({"obstacle_distance": 20})
-    assert ollama._obstacle_is_near({"distance": 30})
-    assert not ollama._obstacle_is_near({"obstacle": False, "obstacle_distance": 80})
+def test_movement_intent_adds_action_guidance_to_prompt():
+    captured = {}
+
+    async def handler(request: httpx.Request):
+        captured.update(json.loads(request.content))
+        return httpx.Response(
+            200,
+            json={"response": '{"speech":"Backing up!","action":"move_back"}'},
+        )
+
+    async def run_call():
+        client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+        try:
+            return await ollama.perceive_and_generate(
+                client=client,
+                prompt="move back",
+            )
+        finally:
+            await client.aclose()
+
+    result = asyncio.run(run_call())
+    assert "Movement command detected" in captured["prompt"]
+    assert "move_back" in captured["prompt"]
+    assert result["action"] == "move_back"
+
+
+def test_move_back_survives_obstacle_guard():
+    result = _run(
+        prompt="move back",
+        sensor_status={"obstacle": True},
+        model_response={"speech": "Backing up now.", "action": "move_back"},
+    )
+    assert result["action"] == "move_back"
+
+
+def test_nearest_distance_cm_triggers_obstacle_guard():
+    result = _run(
+        prompt="go forward",
+        sensor_status={"obstacle": False, "nearest_distance_cm": 10},
+        model_response={"speech": "Going forward.", "action": "move_forward"},
+    )
+    assert result["action"] == "tilt_head"
+
+
+def test_approach_action_is_allowed():
+    assert "approach" in ollama._get_allowed_actions()
+    parsed = ollama.parse_ollama_response('{"speech":"Heading there!","action":"approach"}')
+    assert parsed["action"] == "approach"

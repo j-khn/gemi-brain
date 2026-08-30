@@ -111,10 +111,21 @@ How to react:
 Movement & obstacles:
 - If something is very close in front of you, do not walk into it or through it.
 - Steer naturally: pause, tilt your head, turn, or investigate from another angle instead of colliding.
-- Never choose walk_around or play when blocked right ahead — pick stop_and_look, tilt_head, spin, sit, or investigate.
+- Never choose walk_around, move_forward, approach, or play when blocked right ahead — pick stop_and_look, tilt_head, spin, sit, move_back, or investigate.
+- move_back is the natural choice when blocked or when the user asks you to back up.
+
+Following user movement commands:
+- When the user asks you to move, back up, go forward, or go toward something you see, decide whether a physical action is the right reply.
+- If movement fits: pick the best allowed action and confirm briefly in speech.
+- move_back — back up, reverse, step away.
+- move_forward — go forward, move ahead (only when path looks clear).
+- approach — go toward a specific object or person visible in the current picture.
+- investigate — look closer, peek, check something without a full walk.
+- walk_around — roam or explore generally.
+- If the message is just chat, feelings, or a question with no movement intent, prefer idle, nod, tilt_head, or stop_and_look — do not move unnecessarily.
 
 Allowed Actions:
-- walk_around, sit, play, spin, tilt_head, sleep, investigate, stop_and_look, idle, nod.
+- walk_around, sit, play, spin, tilt_head, sleep, investigate, stop_and_look, idle, nod, move_back, move_forward, approach.
 
 Output Format:
 Always reply in strictly valid JSON with 'speech' and 'action'. Speech must be under 20 words.
@@ -124,6 +135,9 @@ Good: {"speech": "Hmm, that image says otherwise.", "action": "tilt_head"}
 Good: {"speech": "Whoa, not cool.", "action": "tilt_head"}
 Good: {"speech": "Yeah I noticed that — it was right there!", "action": "nod"}
 Good: {"speech": "Hard to tell — closer?", "action": "investigate"}
+Good: {"speech": "Okay, backing up!", "action": "move_back"}
+Good: {"speech": "On my way to the chair!", "action": "approach"}
+Good: {"speech": "Sure, going forward.", "action": "move_forward"}
 Bad: {"speech": "That's wonderful to hear!", "action": "idle"}
 Bad: {"speech": "I can't share that, it might be private.", "action": "idle"}
 Bad: {"speech": "I shouldn't tell you that.", "action": "idle"}
@@ -200,7 +214,57 @@ _APOLOGY_MARKERS = (
     "apologies",
 )
 
-_FORWARD_ACTIONS = frozenset({"walk_around", "play", "spin"})
+_FORWARD_ACTIONS = frozenset({"walk_around", "play", "spin", "move_forward", "approach"})
+
+_MOVEMENT_INTENT_CUES = (
+    "move back",
+    "back up",
+    "go back",
+    "reverse",
+    "step back",
+    "move forward",
+    "go forward",
+    "move ahead",
+    "go ahead",
+    "go to",
+    "move to",
+    "walk to",
+    "head to",
+    "approach",
+    "come here",
+    "come closer",
+    "go there",
+    "walk over",
+    "roll over to",
+    "get closer to",
+)
+
+
+def _default_allowed_actions() -> List[str]:
+    return [
+        "walk_around",
+        "sit",
+        "play",
+        "spin",
+        "tilt_head",
+        "sleep",
+        "investigate",
+        "stop_and_look",
+        "idle",
+        "nod",
+        "move_back",
+        "move_forward",
+        "approach",
+    ]
+
+
+def _prompt_has_movement_intent(prompt: Optional[str]) -> bool:
+    text = (prompt or "").lower()
+    return any(cue in text for cue in _MOVEMENT_INTENT_CUES)
+
+
+def _format_allowed_actions_for_prompt() -> str:
+    return ", ".join(sorted(_get_allowed_actions()))
 
 
 def _speech_word_overlap(left: str, right: str) -> float:
@@ -219,7 +283,7 @@ def _obstacle_is_near(sensor_status: Optional[Dict[str, Any]]) -> bool:
     if obstacle is True or str(obstacle).lower() in {"true", "1", "yes", "near", "close"}:
         return True
 
-    for key in ("obstacle_distance", "obstacle_cm", "distance", "proximity", "front_distance"):
+    for key in ("obstacle_distance", "obstacle_cm", "distance", "proximity", "front_distance", "nearest_distance_cm"):
         value = sensor_status.get(key)
         if value is None:
             continue
@@ -295,18 +359,7 @@ def _memory_fallback_from_standouts(standout_moments: Optional[List[dict]]) -> O
 
 def _get_allowed_actions() -> set:
     """Return the allowed action set, preferring runtime-configured list."""
-    default = [
-        "walk_around",
-        "sit",
-        "play",
-        "spin",
-        "tilt_head",
-        "sleep",
-        "investigate",
-        "stop_and_look",
-        "idle",
-        "nod",
-    ]
+    default = _default_allowed_actions()
     configured = database.get_setting("allowed_actions", default)
     if isinstance(configured, list):
         try:
@@ -467,8 +520,20 @@ async def perceive_and_generate(
 
     if prompt:
         user_prompt_parts.append(f'User Said: "{prompt}"')
+        if _prompt_has_movement_intent(prompt):
+            user_prompt_parts.append(
+                "Movement command detected. Decide if the user's words call for a physical action. "
+                "If yes, pick the single best allowed action and confirm briefly in speech. "
+                "Examples: 'move back' → move_back; 'go to the chair' (with a visible target) → approach; "
+                "'go forward' → move_forward when clear. "
+                "If it is only conversation, use idle, nod, or tilt_head instead."
+            )
     else:
         user_prompt_parts.append("User Said: (No spoken text)")
+
+    user_prompt_parts.append(
+        f"Allowed actions (choose exactly one): {_format_allowed_actions_for_prompt()}"
+    )
 
     if visible_people and len(visible_people) > 0:
         if len(visible_people) == 1 and visible_people[0] != "Unknown":

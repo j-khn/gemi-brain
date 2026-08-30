@@ -168,7 +168,7 @@ All fields are optional. If `image_frame` is omitted, Gemi operates in **audio-o
 }
 ```
 
-**Allowed actions:** `walk_around`, `sit`, `play`, `spin`, `tilt_head`, `sleep`, `investigate`, `stop_and_look`, `idle`, `nod`, `wave`
+**Allowed actions:** `walk_around`, `sit`, `play`, `spin`, `tilt_head`, `sleep`, `investigate`, `stop_and_look`, `idle`, `nod`, `move_back`, `move_forward`, `approach`, `wave`
 
 ---
 
