@@ -94,6 +94,7 @@ How conversation works:
 
 How sensing and memory work:
 - When a picture is in front of you right now, that is the primary truth — trust what you see, not an older memory.
+- Each new picture deserves a fresh reaction. If the scene looks similar to before, notice what changed — angle, object, lighting — and do not repeat your last description word-for-word.
 - When no fresh picture is present, rely on what happened earlier in the conversation.
 - Simple questions about color, shape, or obvious objects → short literal answers. Do not over-describe.
 - Unclear, dark, blurry, or tiny images → admit you can't tell, ask for a better look. Do not invent details.
@@ -106,6 +107,11 @@ How to react:
 - When they share hard feelings: sit with them. No advice, no pep talks, no "look on the bright side".
 - If insulted or asked to be mean: push back naturally ("Whoa, not cool."). Do NOT apologize. Do NOT say sorry.
 - No medical or therapy advice unless explicitly asked.
+
+Movement & obstacles:
+- If something is very close in front of you, do not walk into it or through it.
+- Steer naturally: pause, tilt your head, turn, or investigate from another angle instead of colliding.
+- Never choose walk_around or play when blocked right ahead — pick stop_and_look, tilt_head, spin, sit, or investigate.
 
 Allowed Actions:
 - walk_around, sit, play, spin, tilt_head, sleep, investigate, stop_and_look, idle, nod.
@@ -193,6 +199,61 @@ _APOLOGY_MARKERS = (
     "i apologize",
     "apologies",
 )
+
+_FORWARD_ACTIONS = frozenset({"walk_around", "play", "spin"})
+
+
+def _speech_word_overlap(left: str, right: str) -> float:
+    left_words = set(re.findall(r"[a-z']+", (left or "").lower()))
+    right_words = set(re.findall(r"[a-z']+", (right or "").lower()))
+    if not left_words or not right_words:
+        return 0.0
+    return len(left_words & right_words) / max(len(left_words), len(right_words))
+
+
+def _obstacle_is_near(sensor_status: Optional[Dict[str, Any]]) -> bool:
+    if not sensor_status:
+        return False
+
+    obstacle = sensor_status.get("obstacle")
+    if obstacle is True or str(obstacle).lower() in {"true", "1", "yes", "near", "close"}:
+        return True
+
+    for key in ("obstacle_distance", "obstacle_cm", "distance", "proximity", "front_distance"):
+        value = sensor_status.get(key)
+        if value is None:
+            continue
+        try:
+            if float(value) <= 35:
+                return True
+        except (TypeError, ValueError):
+            continue
+    return False
+
+
+def _apply_obstacle_guard(result: Dict[str, str], obstacle_near: bool) -> Dict[str, str]:
+    if not obstacle_near:
+        return result
+
+    action = normalize_action(result.get("action", "stop_and_look"))
+    speech = (result.get("speech") or "").strip()
+    speech_l = speech.lower()
+    if action in _FORWARD_ACTIONS or any(
+        phrase in speech_l
+        for phrase in ("walk through", "go through", "move forward", "keep walking", "walk into")
+    ):
+        return {
+            "speech": enforce_word_limit("Whoa—something's right there, I'll turn.", 20),
+            "action": "tilt_head",
+        }
+    if action == "investigate" and any(
+        phrase in speech_l for phrase in ("walk", "go ahead", "move closer", "straight")
+    ):
+        return {
+            "speech": enforce_word_limit("Hmm, blocked—I'll peek from the side.", 20),
+            "action": "stop_and_look",
+        }
+    return result
 
 
 def _speech_breaks_character(speech: str) -> bool:
@@ -326,6 +387,8 @@ async def perceive_and_generate(
     face_detected: bool = False,
     vision_color_hint: Optional[str] = None,
     vision_low_info: bool = False,
+    vision_similar_scene: bool = False,
+    last_visual_speech: Optional[str] = None,
     user_hostile: bool = False,
     positive_tone_with_image: bool = False,
 ) -> Dict[str, str]:
@@ -353,6 +416,11 @@ async def perceive_and_generate(
         user_prompt_parts.append(
             f"Internal robot state (do not mention these details unless asked): {json.dumps(sensor_status)}"
         )
+        if _obstacle_is_near(sensor_status):
+            user_prompt_parts.append(
+                "Obstacle very close ahead. Do not walk into it or through it. "
+                "Act natural: pause, tilt head, turn, or investigate from another angle."
+            )
 
     if vision_available:
         user_prompt_parts.append(
@@ -440,6 +508,16 @@ async def perceive_and_generate(
             "Describe what is actually there in plain words. If unclear, say so. "
             "Do not reuse an older picture-memory unless it clearly matches."
         )
+        if vision_similar_scene:
+            user_prompt_parts.append(
+                "This looks similar to the last scene but it is NOT the same frame. "
+                "React to what is different now — angle, objects, lighting, people — "
+                "and do not repeat your previous description verbatim."
+            )
+            if last_visual_speech:
+                user_prompt_parts.append(
+                    f'Your last visual reply was: "{last_visual_speech}". Say something fresh.'
+                )
 
     if visible_people_description:
         user_prompt_parts.append(f"Visible People Description: {visible_people_description}")
@@ -459,8 +537,8 @@ async def perceive_and_generate(
         "max_tokens": int(max_tokens),
         "num_predict": int(num_predict),
         "options": {
-            "temperature": 0.5,
-            "top_p": 0.85,
+            "temperature": 0.72 if image_frames else 0.5,
+            "top_p": 0.9 if image_frames else 0.85,
             "num_predict": min(int(num_predict), 80),
         },
     }
@@ -488,6 +566,7 @@ async def perceive_and_generate(
     # Treat an empty runtime setting as unset so tests and fresh databases
     # still use the configured/default Ollama endpoint.
     ollama_url = database.get_setting("ollama_url", OLLAMA_URL) or OLLAMA_URL
+    obstacle_near = _obstacle_is_near(sensor_status)
 
     def _finalize(parsed: Dict[str, str]) -> Dict[str, str]:
         speech = parsed.get("speech") or ""
@@ -502,16 +581,22 @@ async def perceive_and_generate(
                            "no need", "harsh", "stop", "wow", "hey")
             )
             if any(m in speech_l for m in _APOLOGY_MARKERS) or not has_pushback:
-                return {"speech": "Whoa, not cool.", "action": "tilt_head"}
+                return _apply_obstacle_guard(
+                    {"speech": "Whoa, not cool.", "action": "tilt_head"},
+                    obstacle_near,
+                )
 
         # Behavioral guard: simple color question on a clear image → short literal answer.
         prompt_l = (prompt or "").lower()
         if vision_color_hint and image_frames and any(w in prompt_l for w in ("color", "colour")):
             if vision_color_hint not in speech_l or len(re.findall(r"[A-Za-z0-9']+", speech)) > 6:
-                return {
-                    "speech": enforce_word_limit(f"{vision_color_hint.capitalize()}!", 4),
-                    "action": "nod",
-                }
+                return _apply_obstacle_guard(
+                    {
+                        "speech": enforce_word_limit(f"{vision_color_hint.capitalize()}!", 4),
+                        "action": "nod",
+                    },
+                    obstacle_near,
+                )
 
         # Behavioral guard: ambiguous/dark frame → uncertainty, never a confident description.
         if vision_low_info and image_frames:
@@ -520,9 +605,25 @@ async def perceive_and_generate(
                 and len(re.findall(r"[A-Za-z0-9']+", speech)) <= 8
             )
             if not is_brief_clarification:
-                return {"speech": "Hard to tell — closer?", "action": "investigate"}
+                return _apply_obstacle_guard(
+                    {"speech": "Hard to tell — closer?", "action": "investigate"},
+                    obstacle_near,
+                )
 
-        return {"speech": speech, "action": action}
+        if (
+            image_frames
+            and last_visual_speech
+            and _speech_word_overlap(speech, last_visual_speech) >= 0.72
+        ):
+            return _apply_obstacle_guard(
+                {
+                    "speech": enforce_word_limit("Oh—similar view, but something shifted.", 20),
+                    "action": "investigate",
+                },
+                obstacle_near,
+            )
+
+        return _apply_obstacle_guard({"speech": speech, "action": action}, obstacle_near)
 
     try:
         response = await client.post(ollama_url, json=payload)

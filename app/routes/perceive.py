@@ -184,6 +184,8 @@ async def perceive(request: PerceiveRequest):
         standout_moments = []
         vision_color_hint = ""
         vision_low_info = False
+        vision_similar_scene = False
+        last_visual_speech = ""
         if frames:
             # Fresh image: clear prior visual semantic state completely.
             standout_moments = []
@@ -196,9 +198,16 @@ async def perceive(request: PerceiveRequest):
                 raw = vision.decode_image_base64(frames[0])
                 vision_color_hint = vision.dominant_color_label(raw)
                 vision_low_info = vision.looks_low_information(raw)
+                current_fp = vision.image_fingerprint(raw)
+                previous_fp = get_setting("last_image_fingerprint", "") or ""
+                last_visual_speech = get_setting("last_visual_speech", "") or ""
+                if current_fp and previous_fp:
+                    similarity = vision.fingerprint_similarity(current_fp, previous_fp)
+                    vision_similar_scene = 0.72 <= similarity < 1.0
             except Exception:
                 vision_color_hint = ""
                 vision_low_info = False
+                current_fp = ""
         elif is_visual_anaphora(request.prompt):
             # Ambiguous "that part / earlier" → only the newest visual tip.
             latest = get_latest_visual_moment(minutes=120)
@@ -230,6 +239,13 @@ async def perceive(request: PerceiveRequest):
             limit=8 if frames else 12,
         )
         recent_notes = get_recent_interaction_logs(limit=8, minutes=60)
+        if frames:
+            recent_notes = [
+                note
+                for note in recent_notes
+                if "[shared a picture]" not in note.lower()
+                and "speech:" not in note.lower()
+            ]
 
         prompt_l = (request.prompt or "").lower()
         user_hostile = any(
@@ -296,6 +312,8 @@ async def perceive(request: PerceiveRequest):
             face_detected=face_detected,
             vision_color_hint=vision_color_hint or None,
             vision_low_info=vision_low_info,
+            vision_similar_scene=vision_similar_scene,
+            last_visual_speech=last_visual_speech or None,
             user_hostile=user_hostile,
             positive_tone_with_image=bool(positive_tone and frames),
         )
@@ -312,6 +330,13 @@ async def perceive(request: PerceiveRequest):
         elif frames and not request.prompt:
             prompt_summary = "Shared a picture"
         save_interaction_log(f"Prompt: {prompt_summary} -> Speech: '{speech}' | Action: {action}")
+        if frames:
+            try:
+                raw = vision.decode_image_base64(frames[0])
+                set_setting("last_image_fingerprint", vision.image_fingerprint(raw))
+                set_setting("last_visual_speech", speech)
+            except Exception:
+                pass
         # Save conversation turn for each recognized person (associate with None for unknowns)
         if person_ids:
             for pid in person_ids:

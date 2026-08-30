@@ -175,6 +175,29 @@ def dominant_color_label(image_bytes: bytes) -> str:
     return "blue"
 
 
+def image_fingerprint(image_bytes: bytes, hash_size: int = 8) -> str:
+    """Compact perceptual fingerprint for spotting similar (not identical) scenes."""
+    try:
+        from PIL import Image
+    except ImportError:
+        return ""
+
+    gray = Image.open(io.BytesIO(image_bytes)).convert("L").resize((hash_size, hash_size))
+    pixels = list(gray.getdata())
+    if not pixels:
+        return ""
+    mean = sum(pixels) / len(pixels)
+    return "".join("1" if value > mean else "0" for value in pixels)
+
+
+def fingerprint_similarity(left: str, right: str) -> float:
+    """Return fraction of matching bits between two fingerprints (0.0–1.0)."""
+    if not left or not right or len(left) != len(right):
+        return 0.0
+    matches = sum(a == b for a, b in zip(left, right))
+    return matches / len(left)
+
+
 def looks_low_information(image_bytes: bytes) -> bool:
     """Heuristic: very dark frames are likely ambiguous to a person.
 
