@@ -49,8 +49,9 @@ def test_system_prompt_encourages_human_memory_and_feelings():
     assert "Do NOT apologize" in system or "do not apologize" in system.lower()
     # Colour grounding / vision uncertainty mentioned
     assert "unclear" in system.lower() or "blurry" in system.lower()
-    # Vision-first
-    assert "primary" in system.lower()
+    # Multi-input synthesis
+    assert "multi-input synthesis" in system.lower() or "vector a" in system.lower()
+    assert "anti-vision-collapse" in system.lower() or "vision-collapse" in system.lower()
 
 
 def test_ongoing_chat_does_not_force_a_greeting():

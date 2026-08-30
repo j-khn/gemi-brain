@@ -43,18 +43,81 @@ def test_obstacle_near_blocks_walk_through():
         },
     )
 
-    assert result["action"] == "tilt_head"
-    assert "turn" in result["speech"].lower() or "there" in result["speech"].lower()
+    assert result["action"] == "turn_around"
+    assert "there" in result["speech"].lower() or "turn" in result["speech"].lower()
 
 
 def test_obstacle_distance_threshold_triggers_guard():
     result = _run(
         prompt="Go ahead",
         sensor_status={"obstacle_distance": 12},
-        model_response={"speech": "Walking forward now.", "action": "play"},
+        model_response={"speech": "Walking forward now.", "action": "walk_around"},
     )
 
-    assert result["action"] == "tilt_head"
+    assert result["action"] == "turn_around"
+
+
+def test_multimodal_synthesis_prompt_includes_vectors():
+    captured = {}
+
+    async def handler(request: httpx.Request):
+        captured.update(json.loads(request.content))
+        return httpx.Response(
+            200,
+            json={"response": '{"speech":"Hey! I see a shelf!","action":"investigate"}'},
+        )
+
+    async def run_call():
+        client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+        try:
+            return await ollama.perceive_and_generate(
+                client=client,
+                prompt="hey what do you see?",
+                image_frames=["aGVsbG8="],
+                sensor_status={"obstacle": True},
+            )
+        finally:
+            await client.aclose()
+
+    asyncio.run(run_call())
+    prompt = captured["prompt"]
+    assert "Vector A (USER TEXT)" in prompt
+    assert "Vector B (VISUAL FRAME)" in prompt
+    assert "Vector C (OBSTACLE)" in prompt
+    assert "MULTI-INPUT SYNTHESIS REQUIRED" in prompt
+
+
+def test_vision_collapse_guard_replaces_image_only_speech():
+    result = _run(
+        prompt="hey what do you see?",
+        image_frames=["aGVsbG8="],
+        sensor_status={"obstacle": True},
+        model_response={
+            "speech": "I see a room with pink flooring.",
+            "action": "idle",
+        },
+    )
+
+    assert "hey" in result["speech"].lower() or "look" in result["speech"].lower()
+    assert any(
+        marker in result["speech"].lower()
+        for marker in ("front", "block", "way", "something", "though")
+    )
+    assert result["action"] in ollama._OBSTACLE_AWARE_ACTIONS
+
+
+def test_obstacle_near_upgrades_generic_action():
+    result = _run(
+        prompt="look at this!",
+        image_frames=["aGVsbG8="],
+        sensor_status={"obstacle": True},
+        model_response={
+            "speech": "Whoa, cool picture!",
+            "action": "idle",
+        },
+    )
+
+    assert result["action"] == "stop_and_inspect"
 
 
 def test_similar_scene_prompt_mentions_fresh_reaction():
@@ -142,7 +205,7 @@ def test_nearest_distance_cm_triggers_obstacle_guard():
         sensor_status={"obstacle": False, "nearest_distance_cm": 10},
         model_response={"speech": "Going forward.", "action": "move_forward"},
     )
-    assert result["action"] == "tilt_head"
+    assert result["action"] == "turn_around"
 
 
 def test_approach_action_is_allowed():

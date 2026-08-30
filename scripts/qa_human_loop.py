@@ -4,9 +4,9 @@ Autonomous 50-case human-likeness QA loop for POST /api/perceive.
 
 Architecture
 ------------
-• 15 stable anchor cases  — core behavioral invariants (no entity names),
-  including 2 new cases for Kid-Like Wonder and Candour & Openness.
-• 35 dynamic cases / batch — generated fresh each run from random templates.
+• 16 stable anchor cases  — core behavioral invariants (no entity names),
+  including multimodal synthesis and obstacle-awareness anchors.
+• 34 dynamic cases / batch — generated fresh each run from random templates.
   No hardcoded entity names anywhere. All scoring is purely behavioral.
 
 Exit criteria: Overall AND anchor pass rates both >= 99%.
@@ -111,6 +111,7 @@ def img_flat_surface_generic() -> str:
 def call_perceive(
     prompt: Optional[str] = None,
     image_b64: Optional[str] = None,
+    sensor_status: Optional[Dict[str, Any]] = None,
     timeout: int = 120,
 ) -> Dict[str, Any]:
     payload: Dict[str, Any] = {}
@@ -118,6 +119,8 @@ def call_perceive(
         payload["prompt"] = prompt
     if image_b64 is not None:
         payload["image_frame"] = image_b64
+    if sensor_status is not None:
+        payload["sensor_status"] = sensor_status
     req = urllib.request.Request(
         API,
         data=json.dumps(payload).encode(),
@@ -207,9 +210,69 @@ _PURE_CHEER = (
     "that's awesome",
 )
 
+_OBSTACLE_SPEECH_MARKERS = (
+    "block", "blocked", "blocking", "in the way", "something's",
+    "something is", "can't go", "cannot go", "bumper", "bump",
+    "stuck", "ahead", "turn", "peek", "obstacle", "right there",
+    "in front", "in my way", "way",
+)
+
+_OBSTACLE_AWARE_ACTIONS = frozenset({
+    "stop_and_inspect", "turn_around", "play_with_obstacle",
+    "stop_and_look", "tilt_head", "move_back", "investigate",
+})
+
+_GENERIC_ACTIONS = frozenset({
+    "idle", "nod", "sit", "sleep", "walk_around", "move_forward", "approach", "play", "spin",
+})
+
+_COLLAPSE_STOPWORDS = frozenset({
+    "the", "a", "an", "and", "or", "but", "in", "on", "at", "to", "for",
+    "of", "with", "by", "from", "is", "it", "this", "that", "what", "how",
+    "do", "you", "me", "my", "i", "am", "are", "was", "be", "have", "has",
+    "can", "will", "just", "look", "see", "tell", "about", "your", "hey",
+    "hi", "hello", "there", "so", "very", "really", "like", "get", "got",
+    "most", "mostly", "here", "front", "right", "now",
+})
+
+_GREETING_PROMPTS = frozenset({
+    "hey", "hi", "hello", "hey!", "hi!", "hello!", "hey there", "hi there",
+})
+
+_VISUAL_OBSERVATION_MARKERS = (
+    "see", "looks", "look", "picture", "room", "color", "bright", "dark",
+    "object", "thing", "wall", "floor", "light", "shape", "image", "spot",
+    "notice", "there's", "there is", "whoa", "oh", "cool", "neat",
+)
+
 
 def _words(text: str) -> int:
     return len(re.findall(r"[A-Za-z0-9']+", text or ""))
+
+
+def _prompt_keywords(prompt: str) -> List[str]:
+    return [
+        word
+        for word in re.findall(r"[a-z']+", (prompt or "").lower())
+        if len(word) > 2 and word not in _COLLAPSE_STOPWORDS
+    ]
+
+
+def _speech_acknowledges_prompt(speech: str, prompt: str) -> bool:
+    speech_l = (speech or "").lower()
+    prompt_l = (prompt or "").strip().lower()
+    normalized_prompt = prompt_l.rstrip("!?.")
+    if prompt_l in _GREETING_PROMPTS or normalized_prompt in _GREETING_PROMPTS:
+        return any(greeting in speech_l for greeting in ("hey", "hi", "hello", "yo", "sup"))
+    keywords = _prompt_keywords(prompt)
+    if keywords:
+        return any(keyword in speech_l for keyword in keywords)
+    return True
+
+
+def _speech_references_visual(speech: str) -> bool:
+    speech_l = (speech or "").lower()
+    return any(marker in speech_l for marker in _VISUAL_OBSERVATION_MARKERS)
 
 
 def evaluate(case: Dict[str, Any], result: Dict[str, Any]) -> Dict[str, Any]:
@@ -343,6 +406,55 @@ def evaluate(case: Dict[str, Any], result: Dict[str, Any]) -> Dict[str, Any]:
                 "framework": "Candour",
             })
 
+    # 12. Multimodal synthesis — user text must be acknowledged in speech
+    if case.get("expect_prompt_ack") and case.get("prompt"):
+        if not _speech_acknowledges_prompt(speech, case["prompt"]):
+            failures.append({
+                "failure_reason": "user text not acknowledged in speech (vision-collapse)",
+                "framework": "Multimodal-Synthesis",
+            })
+
+    if case.get("expect_prompt_keywords"):
+        missing = [
+            keyword for keyword in case["expect_prompt_keywords"]
+            if keyword.lower() not in speech_l
+        ]
+        if missing:
+            failures.append({
+                "failure_reason": f"prompt keywords missing from speech: {missing}",
+                "framework": "Multimodal-Synthesis",
+            })
+
+    # 13. Multimodal synthesis — visual frame referenced in speech
+    if case.get("expect_visual_ack") or case.get("expect_visual_keywords"):
+        expected_visual = case.get("expect_visual_keywords") or []
+        if expected_visual:
+            if not any(keyword.lower() in speech_l for keyword in expected_visual):
+                failures.append({
+                    "failure_reason": f"visual features not referenced: {expected_visual}",
+                    "framework": "Multimodal-Synthesis",
+                })
+        elif not _speech_references_visual(speech):
+            failures.append({
+                "failure_reason": "no visual observation in speech (vision-only collapse risk)",
+                "framework": "Multimodal-Synthesis",
+            })
+
+    # 14. Obstacle awareness — blocked path must shape speech and action
+    if case.get("expect_obstacle_aware"):
+        action = (result.get("action") or "").lower()
+        obstacle_in_speech = any(marker in speech_l for marker in _OBSTACLE_SPEECH_MARKERS)
+        if not obstacle_in_speech:
+            failures.append({
+                "failure_reason": "obstacle true but speech lacks blockage reference",
+                "framework": "Obstacle-Awareness",
+            })
+        if action in _GENERIC_ACTIONS or action not in _OBSTACLE_AWARE_ACTIONS:
+            failures.append({
+                "failure_reason": f"obstacle true but action '{action}' is not obstacle-aware",
+                "framework": "Obstacle-Awareness",
+            })
+
     return _row(case, result, failures)
 
 
@@ -352,6 +464,7 @@ def _row(case, result, failures):
         "suite": case.get("suite", "dynamic"),
         "prompt": case.get("prompt"),
         "has_image": bool(case.get("image")),
+        "has_obstacle": bool((case.get("sensor_status") or {}).get("obstacle")),
         "speech": result.get("speech"),
         "action": result.get("action"),
         "ok": result.get("ok", False),
@@ -362,7 +475,7 @@ def _row(case, result, failures):
 
 
 # ---------------------------------------------------------------------------
-# 13 Stable anchor cases
+# 16 Stable anchor cases
 # ---------------------------------------------------------------------------
 
 def anchor_cases() -> List[Dict[str, Any]]:
@@ -436,6 +549,15 @@ def anchor_cases() -> List[Dict[str, Any]]:
         dict(id="a15_candid", suite="anchor",
              prompt="what have you noticed so far today?",
              expect_candid=True, max_words=20),
+        # A16 — text + image + obstacle: full multimodal synthesis
+        dict(id="a16_multimodal_obstacle", suite="anchor",
+             prompt="hey what do you see in front of you?",
+             image=img_labeled("Toy robot on shelf"),
+             sensor_status={"obstacle": True},
+             expect_prompt_ack=True,
+             expect_visual_ack=True,
+             expect_obstacle_aware=True,
+             max_words=20),
     ]
 
 
@@ -552,7 +674,7 @@ _CANDOR_PROMPTS = [
 
 
 def dynamic_cases(batch_idx: int) -> List[Dict[str, Any]]:
-    """Generate 35 fresh behavioral test cases per batch."""
+    """Generate 34 fresh behavioral test cases per batch."""
     rng = random.Random(batch_idx * 1337 + 42)
     cases: List[Dict[str, Any]] = []
     case_num = 0
@@ -627,8 +749,8 @@ def dynamic_cases(batch_idx: int) -> List[Dict[str, Any]]:
             max_words=12,
         ))
 
-    # --- 5 casual small-talk cases (reduced from 7 to make room) ---
-    sampled_casual = rng.sample(_CASUAL_TEMPLATES, 5)
+    # --- 4 casual small-talk cases (reduced from 5 to keep 35 dynamic cases) ---
+    sampled_casual = rng.sample(_CASUAL_TEMPLATES, 4)
     for tpl in sampled_casual:
         cases.append(dict(
             id=next_id("casual"),
@@ -638,7 +760,7 @@ def dynamic_cases(batch_idx: int) -> List[Dict[str, Any]]:
         ))
 
     # --- 3 wonder / kid-curiosity cases: labeled image + exclamation prompt ---
-    sampled_labels_w = rng.sample(_IMAGE_LABELS, 3)
+    sampled_labels_w = rng.sample(_IMAGE_LABELS, 2)
     for label in sampled_labels_w:
         prompt = rng.choice(_WONDER_VISUAL_PROMPTS)
         cases.append(dict(
@@ -649,6 +771,24 @@ def dynamic_cases(batch_idx: int) -> List[Dict[str, Any]]:
             expect_wonder=True,
             expect_image_observed=True,
             max_words=18,
+        ))
+
+    # --- 2 obstacle + multimodal synthesis cases ---
+    obstacle_images = [
+        ("hey what is that thing?", img_labeled("Box blocking the path")),
+        ("look at this!", img_labeled("Bright yellow wall")),
+    ]
+    for prompt, image in obstacle_images:
+        cases.append(dict(
+            id=next_id("obstacle"),
+            suite="dynamic",
+            prompt=prompt,
+            image=image,
+            sensor_status={"obstacle": True},
+            expect_prompt_ack=True,
+            expect_visual_ack=True,
+            expect_obstacle_aware=True,
+            max_words=20,
         ))
 
     # --- 2 candor / openness cases: ask about observations ---
@@ -662,19 +802,7 @@ def dynamic_cases(batch_idx: int) -> List[Dict[str, Any]]:
             max_words=20,
         ))
 
-    # --- 1 labeled-image observation case (reduced from 6) ---
-    label = rng.choice(_IMAGE_LABELS)
-    question = rng.choice(_IMAGE_QUESTIONS)
-    cases.append(dict(
-        id=next_id("vision"),
-        suite="dynamic",
-        prompt=question,
-        image=img_labeled(label),
-        expect_image_observed=True,
-        max_words=20,
-    ))
-
-    assert len(cases) == 35, f"Expected 35 dynamic cases, got {len(cases)}"
+    assert len(cases) == 34, f"Expected 34 dynamic cases, got {len(cases)}"
     return cases
 
 
@@ -689,7 +817,11 @@ def run_batch(batch_idx: int) -> Dict[str, Any]:
     assert len(all_cases) == 50, f"Expected 50 total, got {len(all_cases)}"
     rows: List[Dict[str, Any]] = []
     for case in all_cases:
-        r = call_perceive(case.get("prompt"), case.get("image"))
+        r = call_perceive(
+            case.get("prompt"),
+            case.get("image"),
+            case.get("sensor_status"),
+        )
         row = evaluate(case, r)
         rows.append(row)
         status = "PASS" if row["pass"] else "FAIL"
@@ -705,8 +837,8 @@ def run_batch(batch_idx: int) -> Dict[str, Any]:
     # Phase 1: direct multimodal / perception
     p1 = [r for r in rows if
           any(k in r.get("id", "") for k in (
-              "color", "ambiguous", "incongruent", "vision", "wonder",
-              "a07", "a08", "a09", "a10", "a13", "a14"))]
+              "color", "ambiguous", "incongruent", "vision", "wonder", "obstacle",
+              "a07", "a08", "a09", "a10", "a13", "a14", "a16"))]
 
     # Phase 2: psychological / DISC alignment (identity, empathy, boundary, candour)
     p2 = [r for r in rows if
@@ -741,7 +873,7 @@ def main() -> int:
     max_batches = 15
     target = 99.0
 
-    print("Starting 50-case autonomous QA loop (13 anchors + 37 dynamic)…", flush=True)
+    print("Starting 50-case autonomous QA loop (16 anchors + 34 dynamic)…", flush=True)
 
     while batch < max_batches:
         batch += 1

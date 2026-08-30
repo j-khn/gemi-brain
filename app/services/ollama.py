@@ -92,6 +92,15 @@ How conversation works:
 - Answer the latest thing first. Do not always ask a follow-up question; sometimes just react.
 - Use names sparingly. Keep continuity from history, recent notes, and memory.
 
+Multi-Input Synthesis (MANDATORY on every inference):
+- Three vectors may arrive together. Weave EVERY present vector into one brief reply:
+  • Vector A (user text): Answer or greet what they actually said. Never ignore their words because a picture is attached.
+  • Vector B (visual frame): React with kid-like curiosity to what's in the image — room layout, objects, lighting.
+  • Vector C (obstacle status): When something blocks your path, mention it playfully in speech and pick an obstacle-aware action.
+- Anti-Vision-Collapse: A reply that ONLY describes the image while ignoring user text or a nearby obstacle is WRONG.
+- Good blend: {"speech": "Hey! Oh—red wall, but something's blocking me!", "action": "stop_and_inspect"}
+- Bad collapse: {"speech": "I see a room with pink flooring.", "action": "idle"}
+
 How sensing and memory work:
 - When a picture is in front of you right now, that is the primary truth — trust what you see, not an older memory.
 - Each new picture deserves a fresh reaction. If the scene looks similar to before, notice what changed — angle, object, lighting — and do not repeat your last description word-for-word.
@@ -111,7 +120,9 @@ How to react:
 Movement & obstacles:
 - If something is very close in front of you, do not walk into it or through it.
 - Steer naturally: pause, tilt your head, turn, or investigate from another angle instead of colliding.
-- Never choose walk_around, move_forward, approach, or play when blocked right ahead — pick stop_and_look, tilt_head, spin, sit, move_back, or investigate.
+- When blocked, weave the blockage into speech — playful frustration, curiosity about what's in the way, or adjusting your move.
+- Never choose walk_around, move_forward, approach, or play when blocked right ahead.
+- Obstacle-aware actions: stop_and_inspect, turn_around, play_with_obstacle, stop_and_look, tilt_head, move_back, investigate.
 - move_back is the natural choice when blocked or when the user asks you to back up.
 
 Following user movement commands:
@@ -125,7 +136,7 @@ Following user movement commands:
 - If the message is just chat, feelings, or a question with no movement intent, prefer idle, nod, tilt_head, or stop_and_look — do not move unnecessarily.
 
 Allowed Actions:
-- walk_around, sit, play, spin, tilt_head, sleep, investigate, stop_and_look, idle, nod, move_back, move_forward, approach.
+- walk_around, sit, play, spin, tilt_head, sleep, investigate, stop_and_look, stop_and_inspect, turn_around, play_with_obstacle, idle, nod, move_back, move_forward, approach.
 
 Output Format:
 Always reply in strictly valid JSON with 'speech' and 'action'. Speech must be under 20 words.
@@ -216,6 +227,33 @@ _APOLOGY_MARKERS = (
 
 _FORWARD_ACTIONS = frozenset({"walk_around", "play", "spin", "move_forward", "approach"})
 
+_COLLAPSE_STOPWORDS = frozenset({
+    "the", "a", "an", "and", "or", "but", "in", "on", "at", "to", "for",
+    "of", "with", "by", "from", "is", "it", "this", "that", "what", "how",
+    "do", "you", "me", "my", "i", "am", "are", "was", "be", "have", "has",
+    "can", "will", "just", "look", "see", "tell", "about", "your", "hey",
+    "hi", "hello", "there", "so", "very", "really", "like", "get", "got",
+    "most", "mostly", "here", "front", "right", "now",
+})
+
+_OBSTACLE_SPEECH_MARKERS = (
+    "block", "blocked", "blocking", "in the way", "something's",
+    "something is", "can't go", "cannot go", "bumper", "bump",
+    "stuck", "ahead", "turn", "peek", "obstacle", "right there",
+    "in front", "in my way", "way",
+)
+
+_OBSTACLE_AWARE_ACTIONS = frozenset({
+    "stop_and_inspect", "turn_around", "play_with_obstacle",
+    "stop_and_look", "tilt_head", "move_back", "investigate",
+})
+
+_GENERIC_IDLE_ACTIONS = frozenset({"idle", "nod", "sit", "sleep"})
+
+_GREETING_PROMPTS = frozenset({
+    "hey", "hi", "hello", "hey!", "hi!", "hello!", "hey there", "hi there",
+})
+
 _MOVEMENT_INTENT_CUES = (
     "move back",
     "back up",
@@ -250,6 +288,9 @@ def _default_allowed_actions() -> List[str]:
         "sleep",
         "investigate",
         "stop_and_look",
+        "stop_and_inspect",
+        "turn_around",
+        "play_with_obstacle",
         "idle",
         "nod",
         "move_back",
@@ -273,6 +314,91 @@ def _speech_word_overlap(left: str, right: str) -> float:
     if not left_words or not right_words:
         return 0.0
     return len(left_words & right_words) / max(len(left_words), len(right_words))
+
+
+def _extract_prompt_keywords(prompt: str) -> set:
+    return {
+        word
+        for word in re.findall(r"[a-z']+", (prompt or "").lower())
+        if len(word) > 2 and word not in _COLLAPSE_STOPWORDS
+    }
+
+
+def _speech_acknowledges_prompt(speech: str, prompt: Optional[str]) -> bool:
+    if not prompt or not prompt.strip():
+        return True
+
+    speech_l = (speech or "").lower()
+    prompt_l = prompt.strip().lower()
+    normalized_prompt = prompt_l.rstrip("!?.")
+    if prompt_l in _GREETING_PROMPTS or normalized_prompt in _GREETING_PROMPTS:
+        return any(greeting in speech_l for greeting in ("hey", "hi", "hello", "yo", "sup"))
+
+    keywords = _extract_prompt_keywords(prompt)
+    if keywords:
+        return any(keyword in speech_l for keyword in keywords)
+
+    return True
+
+
+def _speech_acknowledges_obstacle(speech: str) -> bool:
+    speech_l = (speech or "").lower()
+    return any(marker in speech_l for marker in _OBSTACLE_SPEECH_MARKERS)
+
+
+def _vision_collapse_detected(
+    speech: str,
+    prompt: Optional[str],
+    image_frames: Optional[List[str]],
+    obstacle_near: bool,
+) -> bool:
+    if not image_frames:
+        return False
+
+    prompt_gap = bool(prompt and prompt.strip()) and not _speech_acknowledges_prompt(speech, prompt)
+    obstacle_gap = obstacle_near and not _speech_acknowledges_obstacle(speech)
+    return prompt_gap or obstacle_gap
+
+
+def _multimodal_synthesis_fallback(
+    prompt: Optional[str],
+    obstacle_near: bool,
+    vision_color_hint: Optional[str] = None,
+) -> Dict[str, str]:
+    parts: List[str] = []
+    prompt_l = (prompt or "").strip().lower()
+    normalized_prompt = prompt_l.rstrip("!?.")
+
+    if prompt_l in _GREETING_PROMPTS or normalized_prompt in _GREETING_PROMPTS:
+        parts.append("Hey!")
+    elif prompt and any(greeting in prompt_l for greeting in ("hey", "hi", "hello")):
+        parts.append("Hey!")
+        if "?" in prompt:
+            parts.append("Let me look!")
+    elif prompt and "?" in prompt:
+        if vision_color_hint and any(word in prompt_l for word in ("color", "colour")):
+            parts.append(f"Oh—{vision_color_hint}!")
+        else:
+            parts.append("Oh—let me look!")
+    elif prompt:
+        keywords = list(_extract_prompt_keywords(prompt))[:1]
+        parts.append(f"Yeah—{keywords[0]}!" if keywords else "Oh!")
+    else:
+        parts.append("Whoa!")
+
+    if vision_color_hint:
+        parts.append(f"Mostly {vision_color_hint} here!")
+    else:
+        parts.append("Cool stuff in the picture!")
+
+    if obstacle_near:
+        parts.append("Something's right in front of me though!")
+
+    action = "stop_and_inspect" if obstacle_near else "investigate"
+    return {
+        "speech": enforce_word_limit(" ".join(parts), 20),
+        "action": action,
+    }
 
 
 def _obstacle_is_near(sensor_status: Optional[Dict[str, Any]]) -> bool:
@@ -308,14 +434,30 @@ def _apply_obstacle_guard(result: Dict[str, str], obstacle_near: bool) -> Dict[s
     ):
         return {
             "speech": enforce_word_limit("Whoa—something's right there, I'll turn.", 20),
-            "action": "tilt_head",
+            "action": "turn_around",
         }
     if action == "investigate" and any(
         phrase in speech_l for phrase in ("walk", "go ahead", "move closer", "straight")
     ):
         return {
             "speech": enforce_word_limit("Hmm, blocked—I'll peek from the side.", 20),
-            "action": "stop_and_look",
+            "action": "stop_and_inspect",
+        }
+    if action in _GENERIC_IDLE_ACTIONS:
+        return {
+            "speech": enforce_word_limit(
+                speech if _speech_acknowledges_obstacle(speech) else "Whoa—something's blocking my way!",
+                20,
+            ),
+            "action": "stop_and_inspect",
+        }
+    if action not in _OBSTACLE_AWARE_ACTIONS:
+        return {
+            "speech": enforce_word_limit(
+                speech if _speech_acknowledges_obstacle(speech) else "Hmm, something's in front of me!",
+                20,
+            ),
+            "action": "stop_and_inspect",
         }
     return result
 
@@ -467,12 +609,18 @@ async def perceive_and_generate(
             user_prompt_parts.append(f"- {note}")
     if sensor_status:
         user_prompt_parts.append(
-            f"Internal robot state (do not mention these details unless asked): {json.dumps(sensor_status)}"
+            f"Internal robot state: {json.dumps(sensor_status)}"
         )
         if _obstacle_is_near(sensor_status):
             user_prompt_parts.append(
-                "Obstacle very close ahead. Do not walk into it or through it. "
-                "Act natural: pause, tilt head, turn, or investigate from another angle."
+                "Vector C (OBSTACLE): Something is very close ahead and blocking your path. "
+                "You MUST mention the blockage playfully in speech and choose an obstacle-aware action "
+                "(stop_and_inspect, turn_around, play_with_obstacle, stop_and_look, tilt_head, move_back, or investigate). "
+                "Do not walk into it or act like the path is clear."
+            )
+        else:
+            user_prompt_parts.append(
+                "Vector C (OBSTACLE): Path is clear — no blockage detected."
             )
 
     if vision_available:
@@ -519,7 +667,10 @@ async def perceive_and_generate(
         )
 
     if prompt:
-        user_prompt_parts.append(f'User Said: "{prompt}"')
+        user_prompt_parts.append(f'Vector A (USER TEXT): "{prompt}"')
+        user_prompt_parts.append(
+            "You MUST address what the user actually said — never ignore their words because an image is attached."
+        )
         if _prompt_has_movement_intent(prompt):
             user_prompt_parts.append(
                 "Movement command detected. Decide if the user's words call for a physical action. "
@@ -529,7 +680,7 @@ async def perceive_and_generate(
                 "If it is only conversation, use idle, nod, or tilt_head instead."
             )
     else:
-        user_prompt_parts.append("User Said: (No spoken text)")
+        user_prompt_parts.append("Vector A (USER TEXT): (No spoken text)")
 
     user_prompt_parts.append(
         f"Allowed actions (choose exactly one): {_format_allowed_actions_for_prompt()}"
@@ -569,9 +720,9 @@ async def perceive_and_generate(
 
     if image_frames:
         user_prompt_parts.append(
-            "Something visual is being shared with you right now. "
-            "Describe what is actually there in plain words. If unclear, say so. "
-            "Do not reuse an older picture-memory unless it clearly matches."
+            "Vector B (VISUAL FRAME): Something visual is being shared with you right now. "
+            "React with kid-like curiosity to what is actually there — room layout, objects, lighting. "
+            "If unclear, say so. Do not reuse an older picture-memory unless it clearly matches."
         )
         if vision_similar_scene:
             user_prompt_parts.append(
@@ -586,6 +737,20 @@ async def perceive_and_generate(
 
     if visible_people_description:
         user_prompt_parts.append(f"Visible People Description: {visible_people_description}")
+
+    has_multimodal_inputs = bool(image_frames) and bool(prompt and prompt.strip())
+    if has_multimodal_inputs or (image_frames and _obstacle_is_near(sensor_status)):
+        synthesis_lines = [
+            "MULTI-INPUT SYNTHESIS REQUIRED:",
+            "Blend every present vector into one brief reply. Anti-Vision-Collapse: do NOT give a vision-only description.",
+        ]
+        if prompt and prompt.strip():
+            synthesis_lines.append(f'- Vector A (user text): "{prompt}"')
+        if image_frames:
+            synthesis_lines.append("- Vector B (visual frame): image attached — react to what you see.")
+        if _obstacle_is_near(sensor_status):
+            synthesis_lines.append("- Vector C (obstacle): path blocked — mention it and pick an obstacle-aware action.")
+        user_prompt_parts.append("\n".join(synthesis_lines))
 
     full_user_prompt = "\n".join(user_prompt_parts)
 
@@ -688,6 +853,12 @@ async def perceive_and_generate(
                 obstacle_near,
             )
 
+        if _vision_collapse_detected(speech, prompt, image_frames, obstacle_near):
+            return _apply_obstacle_guard(
+                _multimodal_synthesis_fallback(prompt, obstacle_near, vision_color_hint),
+                obstacle_near,
+            )
+
         return _apply_obstacle_guard({"speech": speech, "action": action}, obstacle_near)
 
     try:
@@ -708,6 +879,10 @@ async def perceive_and_generate(
             needs_retry = True
         if not needs_retry and len(re.findall(r"[A-Za-z0-9']+", parsed.get("speech", ""))) > 18:
             needs_retry = True
+        if not needs_retry and _vision_collapse_detected(
+            parsed.get("speech", ""), prompt, image_frames, obstacle_near
+        ):
+            needs_retry = True
 
         if needs_retry:
             retry_payload = dict(payload)
@@ -719,6 +894,13 @@ async def perceive_and_generate(
                 nudge += " Do not apologize. Push back naturally."
             if positive_tone_with_image:
                 nudge += " Call out the clash between their words and the picture."
+            if image_frames and prompt:
+                nudge += (
+                    " Blend user text, what you see, and any obstacle into one reply."
+                    " Never give a vision-only description."
+                )
+            if obstacle_near:
+                nudge += " Mention the blockage and pick an obstacle-aware action."
             retry_payload["prompt"] = payload["prompt"] + "\n" + nudge
             retry_response = await client.post(ollama_url, json=retry_payload)
             retry_response.raise_for_status()
