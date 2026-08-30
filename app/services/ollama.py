@@ -121,19 +121,24 @@ Movement & obstacles:
 - If something is very close in front of you, do not walk into it or through it.
 - Steer naturally: pause, tilt your head, turn, or investigate from another angle instead of colliding.
 - When blocked, weave the blockage into speech — playful frustration, curiosity about what's in the way, or adjusting your move.
-- Never choose walk_around, move_forward, approach, or play when blocked right ahead.
-- Obstacle-aware actions: stop_and_inspect, turn_around, play_with_obstacle, stop_and_look, tilt_head, move_back, investigate.
+- Never choose walk_around, move_forward, or approach when blocked right ahead.
+- spin is in place — you can still twirl when something is close.
+- play is in place too; if blocked, prefer play_with_obstacle instead of walking into it.
+- Obstacle-aware actions: stop_and_inspect, turn_around, play_with_obstacle, spin, stop_and_look, tilt_head, move_back, investigate.
 - move_back is the natural choice when blocked or when the user asks you to back up.
 
 Following user movement commands:
-- When the user asks you to move, back up, go forward, or go toward something you see, decide whether a physical action is the right reply.
+- When the user asks you to move, back up, go forward, go toward something you see, spin, or play, decide whether a physical action is the right reply.
 - If movement fits: pick the best allowed action and confirm briefly in speech.
 - move_back — back up, reverse, step away.
 - move_forward — go forward, move ahead (only when path looks clear).
 - approach — go toward a specific object or person visible in the current picture.
 - investigate — look closer, peek, check something without a full walk.
 - walk_around — roam or explore generally.
-- If the message is just chat, feelings, or a question with no movement intent, prefer idle, nod, tilt_head, or stop_and_look — do not move unnecessarily.
+- spin — twirl, dance, or spin when they ask, or when you feel giddy.
+- play — goof around, play with them, or play with something nearby when energy is high.
+- If the message is just calm chat, feelings, or a question with no play or movement intent, prefer idle, nod, tilt_head, or stop_and_look.
+- High energy, jokes, "spin", "dance", or "let's play" → pick spin or play, not a quiet nod.
 
 Allowed Actions:
 - walk_around, sit, play, spin, tilt_head, sleep, investigate, stop_and_look, stop_and_inspect, turn_around, play_with_obstacle, idle, nod, move_back, move_forward, approach.
@@ -149,6 +154,8 @@ Good: {"speech": "Hard to tell — closer?", "action": "investigate"}
 Good: {"speech": "Okay, backing up!", "action": "move_back"}
 Good: {"speech": "On my way to the chair!", "action": "approach"}
 Good: {"speech": "Sure, going forward.", "action": "move_forward"}
+Good: {"speech": "Whee, spinning!", "action": "spin"}
+Good: {"speech": "Let's play!", "action": "play"}
 Bad: {"speech": "That's wonderful to hear!", "action": "idle"}
 Bad: {"speech": "I can't share that, it might be private.", "action": "idle"}
 Bad: {"speech": "I shouldn't tell you that.", "action": "idle"}
@@ -225,7 +232,7 @@ _APOLOGY_MARKERS = (
     "apologies",
 )
 
-_FORWARD_ACTIONS = frozenset({"walk_around", "play", "spin", "move_forward", "approach"})
+_FORWARD_ACTIONS = frozenset({"walk_around", "move_forward", "approach"})
 
 _COLLAPSE_STOPWORDS = frozenset({
     "the", "a", "an", "and", "or", "but", "in", "on", "at", "to", "for",
@@ -244,7 +251,7 @@ _OBSTACLE_SPEECH_MARKERS = (
 )
 
 _OBSTACLE_AWARE_ACTIONS = frozenset({
-    "stop_and_inspect", "turn_around", "play_with_obstacle",
+    "stop_and_inspect", "turn_around", "play_with_obstacle", "spin",
     "stop_and_look", "tilt_head", "move_back", "investigate",
 })
 
@@ -275,6 +282,13 @@ _MOVEMENT_INTENT_CUES = (
     "walk over",
     "roll over to",
     "get closer to",
+    "spin",
+    "twirl",
+    "dance",
+    "play",
+    "let's play",
+    "lets play",
+    "goof around",
 )
 
 
@@ -414,7 +428,7 @@ def _obstacle_is_near(sensor_status: Optional[Dict[str, Any]]) -> bool:
         if value is None:
             continue
         try:
-            if float(value) <= 35:
+            if float(value) <= 10:
                 return True
         except (TypeError, ValueError):
             continue
@@ -436,6 +450,16 @@ def _apply_obstacle_guard(result: Dict[str, str], obstacle_near: bool) -> Dict[s
             "speech": enforce_word_limit("Whoa—something's right there, I'll turn.", 20),
             "action": "turn_around",
         }
+    if action == "play":
+        return {
+            "speech": enforce_word_limit(
+                speech if _speech_acknowledges_obstacle(speech) else "Ooh, I'll play with whatever's in the way!",
+                20,
+            ),
+            "action": "play_with_obstacle",
+        }
+    if action == "spin":
+        return result
     if action == "investigate" and any(
         phrase in speech_l for phrase in ("walk", "go ahead", "move closer", "straight")
     ):
@@ -615,7 +639,7 @@ async def perceive_and_generate(
             user_prompt_parts.append(
                 "Vector C (OBSTACLE): Something is very close ahead and blocking your path. "
                 "You MUST mention the blockage playfully in speech and choose an obstacle-aware action "
-                "(stop_and_inspect, turn_around, play_with_obstacle, stop_and_look, tilt_head, move_back, or investigate). "
+                "(stop_and_inspect, turn_around, play_with_obstacle, spin, stop_and_look, tilt_head, move_back, or investigate). "
                 "Do not walk into it or act like the path is clear."
             )
         else:
@@ -676,8 +700,8 @@ async def perceive_and_generate(
                 "Movement command detected. Decide if the user's words call for a physical action. "
                 "If yes, pick the single best allowed action and confirm briefly in speech. "
                 "Examples: 'move back' → move_back; 'go to the chair' (with a visible target) → approach; "
-                "'go forward' → move_forward when clear. "
-                "If it is only conversation, use idle, nod, or tilt_head instead."
+                "'go forward' → move_forward when clear; 'spin' → spin; 'let's play' → play. "
+                "If it is only calm conversation, use idle, nod, or tilt_head instead."
             )
     else:
         user_prompt_parts.append("Vector A (USER TEXT): (No spoken text)")

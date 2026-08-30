@@ -47,10 +47,20 @@ def test_obstacle_near_blocks_walk_through():
     assert "there" in result["speech"].lower() or "turn" in result["speech"].lower()
 
 
-def test_obstacle_distance_threshold_triggers_guard():
+def test_obstacle_distance_above_10cm_does_not_trigger_guard():
     result = _run(
         prompt="Go ahead",
         sensor_status={"obstacle_distance": 12},
+        model_response={"speech": "Walking forward now.", "action": "walk_around"},
+    )
+
+    assert result["action"] == "walk_around"
+
+
+def test_obstacle_distance_at_10cm_triggers_guard():
+    result = _run(
+        prompt="Go ahead",
+        sensor_status={"obstacle_distance": 10},
         model_response={"speech": "Walking forward now.", "action": "walk_around"},
     )
 
@@ -212,3 +222,80 @@ def test_approach_action_is_allowed():
     assert "approach" in ollama._get_allowed_actions()
     parsed = ollama.parse_ollama_response('{"speech":"Heading there!","action":"approach"}')
     assert parsed["action"] == "approach"
+
+
+def test_spin_survives_obstacle_guard():
+    result = _run(
+        prompt="spin!",
+        sensor_status={"obstacle": True},
+        model_response={"speech": "Whee, spinning!", "action": "spin"},
+    )
+    assert result["action"] == "spin"
+
+
+def test_play_rewrites_to_play_with_obstacle_when_blocked():
+    result = _run(
+        prompt="let's play",
+        sensor_status={"obstacle": True},
+        model_response={"speech": "Let's play!", "action": "play"},
+    )
+    assert result["action"] == "play_with_obstacle"
+
+
+def test_spin_and_play_survive_clear_12cm_path():
+    spin = _run(
+        prompt="spin!",
+        sensor_status={"obstacle": False, "nearest_distance_cm": 12},
+        model_response={"speech": "Whee, spinning!", "action": "spin"},
+    )
+    play = _run(
+        prompt="let's play",
+        sensor_status={"obstacle": False, "obstacle_distance": 12},
+        model_response={"speech": "Let's play!", "action": "play"},
+    )
+    assert spin["action"] == "spin"
+    assert play["action"] == "play"
+
+
+def test_spin_and_play_intent_adds_action_guidance_to_prompt():
+    captured = {}
+
+    async def handler(request: httpx.Request):
+        captured.update(json.loads(request.content))
+        return httpx.Response(
+            200,
+            json={"response": '{"speech":"Whee, spinning!","action":"spin"}'},
+        )
+
+    async def run_call(prompt: str):
+        client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+        try:
+            return await ollama.perceive_and_generate(client=client, prompt=prompt)
+        finally:
+            await client.aclose()
+
+    result = asyncio.run(run_call("spin!"))
+    assert "Movement command detected" in captured["prompt"]
+    assert "spin" in captured["prompt"]
+    assert result["action"] == "spin"
+
+    captured.clear()
+
+    async def play_handler(request: httpx.Request):
+        captured.update(json.loads(request.content))
+        return httpx.Response(
+            200,
+            json={"response": '{"speech":"Let\'s play!","action":"play"}'},
+        )
+
+    async def run_play():
+        client = httpx.AsyncClient(transport=httpx.MockTransport(play_handler))
+        try:
+            return await ollama.perceive_and_generate(client=client, prompt="let's play")
+        finally:
+            await client.aclose()
+
+    play_result = asyncio.run(run_play())
+    assert "Movement command detected" in captured["prompt"]
+    assert "play" in captured["prompt"]
+    assert play_result["action"] == "play"

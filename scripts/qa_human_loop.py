@@ -218,12 +218,12 @@ _OBSTACLE_SPEECH_MARKERS = (
 )
 
 _OBSTACLE_AWARE_ACTIONS = frozenset({
-    "stop_and_inspect", "turn_around", "play_with_obstacle",
+    "stop_and_inspect", "turn_around", "play_with_obstacle", "spin",
     "stop_and_look", "tilt_head", "move_back", "investigate",
 })
 
 _GENERIC_ACTIONS = frozenset({
-    "idle", "nod", "sit", "sleep", "walk_around", "move_forward", "approach", "play", "spin",
+    "idle", "nod", "sit", "sleep", "walk_around", "move_forward", "approach", "play",
 })
 
 _COLLAPSE_STOPWORDS = frozenset({
