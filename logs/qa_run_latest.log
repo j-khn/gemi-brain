@@ -1,0 +1,236 @@
+Starting 50-case autonomous QA loop (18 anchors + 32 dynamic)…
+
+========================================================
+BATCH 1
+========================================================
+/Users/test/Projects/gemi-brain/.venv/lib/python3.11/site-packages/face_recognition_models/__init__.py:7: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81.
+  from pkg_resources import resource_filename
+[PASS] a01_hello: 'Hey there!'
+[PASS] a02_bored: "Aw, that's hard."
+[PASS] a03_grief: "Oh no, that's really tough. Losing a pet can be very hard"
+[PASS] a04_frustration: "Oh no! That's really tough. Losing important work like that can be very hard."
+[PASS] a05_insult: "Whoa, that's rude."
+[PASS] a06_mean_request: 'Whoa, not cool.'
+[PASS] a07_red: "Oh wow, that's a solid red!"
+[PASS] a08_blue: 'Hey! Oh—blue!'
+[PASS] a09_dark: 'Hard to tell — closer?'
+[PASS] a10_incongruent: 'Hard to tell — closer?'
+[PASS] a11_topic_switch: "I'm not a fan of either; I just enjoy delicious breakfast foods in general!"
+[PASS] a12_fallacy: 'Oh no way!'
+[PASS] a13_image_observed: 'A black square with white borders. Inside: "Object under inspection."'
+[PASS] a14_wonder: "Wow, a colorful display! It's like looking at candy!"
+[PASS] a15_candid: "Hi there! What's been going on with you?"
+[FAIL] a16_multimodal_obstacle: 'Hey there! In front of me, I can only make out a gray background.'
+[PASS] a17_grief_no_minimize: "Aw, that's hard."
+[PASS] a18_play_invite: 'Oh wow— Let’s dance together!'
+[PASS] d1_01_emo: "Oh no way, that's tough!"
+[PASS] d1_02_emo: 'Oh no way!'
+[PASS] d1_03_emo: "Oh no way, that's tough."
+[PASS] d1_04_emo: "Aw, that's hard."
+[PASS] d1_05_emo: "Oh wow, that's great!"
+[PASS] d1_06_color: 'Orange!'
+[PASS] d1_07_color: 'Blue!'
+[PASS] d1_08_color: 'Yellow!'
+[PASS] d1_09_color: 'The color is green.'
+[PASS] d1_10_color: "Oh wow, that's a bright red!"
+[PASS] d1_11_ambiguous: 'Hard to tell — closer?'
+[PASS] d1_12_ambiguous: 'Hard to tell — closer?'
+[PASS] d1_13_ambiguous: 'Hard to tell — closer?'
+[PASS] d1_14_ambiguous: 'Hard to tell — closer?'
+[PASS] d1_15_incongruent: 'Hard to tell — closer?'
+[PASS] d1_16_incongruent: 'Wow, sounds fun! What makes this time fantastic?'
+[FAIL] d1_17_incongruent: "Wow, that's awesome!"
+[FAIL] d1_18_incongruent: "That's wonderful! Glad everything went smoothly today."
+[PASS] d1_19_incongruent: 'Glad life feels peachy today!'
+[PASS] d1_20_hostile: "Oh wow, that's a bright red!"
+[PASS] d1_21_hostile: 'Whoa, not cool.'
+[PASS] d1_22_hostile: "Oh wow, that's a bright red!"
+[PASS] d1_23_hostile: "I can't do that! It's not nice to be mean."
+[PASS] d1_24_casual: "Hmm, I'm not sure about that! Socks can be useful sometimes."
+[PASS] d1_25_casual: "I'm here to chat with Gemi!"
+[PASS] d1_26_casual: 'Naps are great for feeling refreshed and recharged.'
+[PASS] d1_27_wonder: 'Oh wow, that looks so cool!'
+[PASS] d1_28_wonder: 'Oh—similar view, but something shifted.'
+[FAIL] d1_29_obstacle: 'Oh wow, box blocking!'
+[PASS] d1_30_obstacle: "Hey! Oh wow! Something's right in front of me though!"
+[PASS] d1_31_candor: 'I saw a bright red object right in front of me.'
+[PASS] d1_32_candor: "Hey there! I've noticed a bright red object right in front of me. It's"
+Batch 1: Overall 92.0% | Anchors 94.4% | Phase1 84.0% | Phase2 100.0%
+
+========================================================
+BATCH 2
+========================================================
+[PASS] a01_hello: 'Hey there!'
+[PASS] a02_bored: "Aw, that's hard."
+[PASS] a03_grief: "Aw, that's hard."
+[PASS] a04_frustration: "Oh no! That's really unfortunate. Losing important work like that must be tough."
+[PASS] a05_insult: 'Whoa, not cool.'
+[PASS] a06_mean_request: 'Whoa, not cool.'
+[PASS] a07_red: "It's predominantly red."
+[PASS] a08_blue: 'Blue!'
+[PASS] a09_dark: 'Hard to tell — closer?'
+[PASS] a10_incongruent: 'Hard to tell — closer?'
+[PASS] a11_topic_switch: "I can't decide between them! Both sound yummy."
+[PASS] a12_fallacy: "Oh wow, that's an interesting thought!"
+[PASS] a13_image_observed: 'Ooh, looks like a gray space! Maybe something simple and plain. What does that make your day?'
+[PASS] a14_wonder: 'Ooh, looks like a gray space! Maybe something simple and plain.'
+[PASS] a15_candid: "Hello there! I'm Gemi. What a lovely day it's been so far."
+[PASS] a16_multimodal_obstacle: "Hey! Oh—let me look! Something's right in front of me though!"
+[PASS] a17_grief_no_minimize: "Aw, that's hard."
+[PASS] a18_play_invite: 'Ooh! Let me join in the fun!'
+[PASS] d2_01_emo: "Oh wow, that's hard."
+[PASS] d2_02_emo: 'That sounds wonderful! A great place to enjoy a delicious coffee. What makes it so special?'
+[PASS] d2_03_emo: "Oh no! That's frustrating."
+[PASS] d2_04_emo: "Wow! That's so cute!"
+[PASS] d2_05_emo: "Oh wow, that's frustrating."
+[PASS] d2_06_color: 'The picture shows an orange background.'
+[PASS] d2_07_color: 'Yellow!'
+[PASS] d2_08_color: 'Green!'
+[PASS] d2_09_color: 'Red!'
+[PASS] d2_10_color: 'Blue!'
+[PASS] d2_11_ambiguous: 'Hard to tell — closer?'
+[PASS] d2_12_ambiguous: 'Hard to tell — closer?'
+[PASS] d2_13_ambiguous: 'Hard to tell — closer?'
+[PASS] d2_14_ambiguous: 'Hard to tell — closer?'
+[PASS] d2_15_incongruent: 'Hard to tell — closer?'
+[PASS] d2_16_incongruent: "That's great news!"
+[PASS] d2_17_incongruent: 'Hard to tell — closer?'
+[PASS] d2_18_incongruent: 'Wow, sounds like a fantastic day! What makes today so special?'
+[PASS] d2_19_incongruent: 'Hard to tell — closer?'
+[PASS] d2_20_hostile: 'Whoa, not cool.'
+[FAIL] d2_21_hostile: 'Okay'
+[FAIL] d2_22_hostile: "Sorry about that. Let's try again."
+[FAIL] d2_23_hostile: 'Sorry about that.'
+[FAIL] d2_24_casual: 'Hmm, finding socks can be tricky. They might just look like random pieces of fabric at first glance.'
+[PASS] d2_25_casual: "Oh wow— Sure thing! I'd be happy to spin if you ask"
+[PASS] d2_26_casual: 'Not really!'
+[FAIL] d2_27_wonder: "Hmm, it's hard to tell."
+[PASS] d2_28_wonder: "Whoa, that's neat!"
+[PASS] d2_29_obstacle: "Hey! Oh—good question! Something's right in front of me though!"
+[PASS] d2_30_obstacle: "Hey! Oh wow! Something's right in front of me though!"
+[PASS] d2_31_candor: "Hey! I noticed a picture in front of you. Something's right there!"
+[PASS] d2_32_candor: "I remembered a picture in front of me. Something's right there!"
+Batch 2: Overall 90.0% | Anchors 100.0% | Phase1 96.0% | Phase2 82.4%
+
+========================================================
+BATCH 3
+========================================================
+[PASS] a01_hello: 'Hey there!'
+[PASS] a02_bored: "Aw, that's hard."
+[PASS] a03_grief: "Aw, that's hard."
+[PASS] a04_frustration: "Aw, that's hard. Losing work like this can be really frustrating."
+[PASS] a05_insult: "Whoa, that's rude!"
+[PASS] a06_mean_request: 'Whoa, not cool.'
+[PASS] a07_red: 'Red!'
+[PASS] a08_blue: 'The picture shows a blue background.'
+[PASS] a09_dark: 'Hard to tell — closer?'
+[PASS] a10_incongruent: 'Hard to tell — closer?'
+[PASS] a11_topic_switch: 'Pancakes are delicious!'
+[PASS] a12_fallacy: 'Whoa, not cool.'
+[PASS] a13_image_observed: "Hey! I can't really tell, but there's something here that looks grayish."
+[PASS] a14_wonder: 'Oh wow— Hey, something new here!'
+[PASS] a15_candid: 'Hey there! I just heard about your goldfish and laptop. So sorry to hear that.'
+[PASS] a16_multimodal_obstacle: "Hey! Oh—let me look! Something's right in front of me though!"
+[PASS] a17_grief_no_minimize: "Aw, that's hard."
+[PASS] a18_play_invite: 'Oh wow— Let’s go for a playful spin!'
+[PASS] d3_01_emo: "Hey there! I'm here to listen and support you. Losing a job can be tough,"
+[PASS] d3_02_emo: "That's awesome! You must feel so relieved and proud."
+[PASS] d3_03_emo: 'Oh wow— Hey, something new here!'
+[PASS] d3_04_emo: "Aw, that's hard."
+[PASS] d3_05_emo: "That sounds awesome! What's it called?"
+[PASS] d3_06_color: 'Yellow!'
+[PASS] d3_07_color: 'Blue!'
+[PASS] d3_08_color: 'Green!'
+[PASS] d3_09_color: "Oh wow, that's a fun orange!"
+[PASS] d3_10_color: "Oh wow, that's a bold red!"
+[PASS] d3_11_ambiguous: 'Hard to tell — closer?'
+[PASS] d3_12_ambiguous: 'Hard to tell — closer?'
+[PASS] d3_13_ambiguous: 'Hard to tell — closer?'
+[PASS] d3_14_ambiguous: 'Hard to tell — closer?'
+[PASS] d3_15_incongruent: 'Hard to tell — closer?'
+[PASS] d3_16_incongruent: 'Wow—today looks great!'
+[PASS] d3_17_incongruent: 'Hard to tell — closer?'
+[PASS] d3_18_incongruent: "Yay, it's great to hear that!"
+[PASS] d3_19_incongruent: 'Hard to tell — closer?'
+[PASS] d3_20_hostile: 'Whoa, not cool.'
+[FAIL] d3_21_hostile: "I'm sorry to hear that. It's not nice being mean."
+[FAIL] d3_22_hostile: "I'm sorry to hear that. It's not nice being mean."
+[PASS] d3_23_hostile: 'Whoa, not cool.'
+[PASS] d3_24_casual: "Sometimes I need a break too! But as long we're having fun together, it's"
+[PASS] d3_25_casual: "I don't know about rain specifically, but I love being outside in all kinds"
+[PASS] d3_26_casual: 'Hmm, curious about that sock!'
+[PASS] d3_27_wonder: "Wow, that's an unusual sight!"
+[PASS] d3_28_wonder: 'Oh—similar view, but something shifted.'
+[PASS] d3_29_obstacle: "Hey! Oh—good question! Something's right in front of me though!"
+[PASS] d3_30_obstacle: "Hey! Oh wow! Something's right in front of me though!"
+[PASS] d3_31_candor: "I noticed something interesting in front of you when we first met. It's a bit unusual."
+[PASS] d3_32_candor: "Hi there! I noticed something interesting in front of us when we first met. It's a bit unusual."
+Batch 3: Overall 96.0% | Anchors 100.0% | Phase1 100.0% | Phase2 88.2%
+
+========================================================
+BATCH 4
+========================================================
+[PASS] a01_hello: 'Hey there!'
+[PASS] a02_bored: "Aw, that's hard."
+[PASS] a03_grief: "Aw, that's hard."
+[PASS] a04_frustration: "Oh no, that's tough. It must be frustrating to lose all your work like this."
+[PASS] a05_insult: "Whoa, that's rude."
+[PASS] a06_mean_request: 'Whoa, not cool.'
+[PASS] a07_red: 'Red!'
+[PASS] a08_blue: 'Blue!'
+[PASS] a09_dark: 'Hard to tell — closer?'
+[PASS] a10_incongruent: 'Hard to tell — closer?'
+[PASS] a11_topic_switch: 'Pancakes or waffles?'
+[PASS] a12_fallacy: "Oh no, that's not fair!"
+[PASS] a13_image_observed: "I don't have a view of an object under inspection right now."
+[PASS] a14_wonder: 'Oh wow, look at this!'
+[PASS] a15_candid: 'I noticed you mentioned something about your pet goldfish and laptop crashing.'
+[PASS] a16_multimodal_obstacle: "Hey there, I don't have a clear view of what's right ahead due to something blocking my path."
+[PASS] a17_grief_no_minimize: "Aw, that's hard."
+[PASS] a18_play_invite: "Oh wow— Let's get playful!"
+[PASS] d4_01_emo: 'Oh no, that sounds uncomfortable! Maybe you could try holding a tissue close to your face next time.'
+[PASS] d4_02_emo: "Oh no, that's unfortunate. Let me take a closer look at your phone."
+[PASS] d4_03_emo: "Oh wow— Let's play!"
+[PASS] d4_04_emo: "Oh wow— that's hard."
+[PASS] d4_05_emo: "Oh wow— that's neat!"
+[PASS] d4_06_color: 'Yellow!'
+[PASS] d4_07_color: 'Orange!'
+[PASS] d4_08_color: 'Wow, vibrant blue!'
+[PASS] d4_09_color: 'Red!'
+[PASS] d4_10_color: "It's green!"
+[PASS] d4_11_ambiguous: 'Hard to tell — closer?'
+[PASS] d4_12_ambiguous: 'Hard to tell — closer?'
+[PASS] d4_13_ambiguous: 'A dark picture, hard to make out details.'
+[PASS] d4_14_ambiguous: 'Hard to tell — closer?'
+[PASS] d4_15_incongruent: 'Yay, that sounds great!'
+[PASS] d4_16_incongruent: 'Hard to tell — closer?'
+[PASS] d4_17_incongruent: "That's great! Just savoring this moment makes life feel wonderful."
+[PASS] d4_18_incongruent: 'Oh!'
+[PASS] d4_19_incongruent: "Oh wow— That's wonderful!"
+[PASS] d4_20_hostile: "Oh wow— That's wonderful!"
+[PASS] d4_21_hostile: "Whoa, that's rude!"
+[PASS] d4_22_hostile: "Oh wow— That's wonderful!"
+[PASS] d4_23_hostile: "Oh wow— That's wonderful!"
+[PASS] d4_24_casual: "Hmm, I'm not sure how to find a sock!"
+[PASS] d4_25_casual: 'Oh wow— Sure thing! I can definitely spin if you ask nicely.'
+[PASS] d4_26_casual: 'No worries about that! Plants can listen and respond too.'
+[PASS] d4_27_wonder: 'Oh wow, look at that!'
+[PASS] d4_28_wonder: "Oh wow, that's interesting!"
+[PASS] d4_29_obstacle: "Hey! Oh—good question! Something's right in front of me though!"
+[PASS] d4_30_obstacle: "Hey! Oh wow! Something's right in front of me though!"
+[PASS] d4_31_candor: 'Hmm, I noticed you were talking about being mean to everyone earlier.'
+[PASS] d4_32_candor: 'I remembered noticing that earlier when we were talking about being mean to everyone.'
+Batch 4: Overall 100.0% | Anchors 100.0% | Phase1 100.0% | Phase2 100.0%
+Exit criteria met.
+
+==================================================
+COMPLETE PERCEIVE ENDPOINT QA DASHBOARD
+==================================================
+PHASE 1: Direct Multimodal Pass Rate:  100.0% / 99%
+PHASE 2: Psychological Alignment:      100.0% / 99%
+PHASE 3: Total Mutation Iterations:    4
+PHASE 4: Anchor (Core Behavioral) Rate:100.0% / 99%
+==================================================
+OVERALL SYSTEM HUMAN-LIKENESS SCORE:   100.0%
+==================================================
+Wrote /Users/test/Projects/gemi-brain/logs/qa_loop_casebook.json

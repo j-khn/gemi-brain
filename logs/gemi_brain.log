@@ -1,0 +1,226 @@
+/Users/test/Projects/gemi-brain/.venv/lib/python3.11/site-packages/face_recognition_models/__init__.py:7: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81.
+  from pkg_resources import resource_filename
+INFO:     Started server process [37214]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8765 (Press CTRL+C to quit)
+INFO:     127.0.0.1:54820 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54822 - "GET / HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:54824 - "GET /json/version HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:54827 - "GET / HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:54832 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54833 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54846 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54858 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54869 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54880 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54891 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54913 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54933 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54945 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54964 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54981 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54991 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55002 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55014 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55033 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55046 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55057 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55067 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55080 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55094 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55107 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55128 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55139 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55150 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55161 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55171 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55181 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55192 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55209 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55219 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55229 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55241 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55259 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55283 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55295 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55307 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55320 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55331 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55341 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55362 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55381 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55395 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55415 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55426 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55437 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55458 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55473 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55483 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55499 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55516 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55529 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55543 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55556 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55567 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55580 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55591 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55603 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55614 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55624 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55641 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55655 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55668 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55681 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55700 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55713 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55725 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55736 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55755 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55766 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55778 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55789 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55800 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55813 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55824 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55839 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55849 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55859 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55876 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55887 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55898 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55916 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55933 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55943 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55960 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55970 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55980 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55993 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56008 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56020 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56031 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56043 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56054 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56075 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56086 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56097 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56108 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56125 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56135 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56152 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56187 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56198 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56213 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56224 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56235 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56247 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56259 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56281 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56306 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56318 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56328 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56342 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56353 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56367 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56378 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56392 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56403 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56415 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56436 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56449 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56461 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56472 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56484 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56495 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56506 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56517 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56536 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56547 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56561 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56572 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56582 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56592 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56602 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56619 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56636 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56655 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56672 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56682 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56699 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56713 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56726 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56737 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56752 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56763 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56774 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56795 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56814 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56828 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56839 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56856 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56873 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56885 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56899 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56911 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56926 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56937 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56948 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56967 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56978 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56988 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56998 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57008 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57019 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57038 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57049 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57067 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57077 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57100 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57110 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57121 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57134 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57145 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57157 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57180 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57192 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57203 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57213 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57231 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57244 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57254 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57268 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57279 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57296 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57308 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57320 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57332 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57350 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57363 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57373 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57383 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57404 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57423 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57446 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57457 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57480 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57492 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57511 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57521 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57531 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57550 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57571 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57592 - "POST /api/perceive HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [37214]
+/Users/test/Projects/gemi-brain/.venv/lib/python3.11/site-packages/face_recognition_models/__init__.py:7: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81.
+  from pkg_resources import resource_filename
+INFO:     Started server process [38274]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8765 (Press CTRL+C to quit)
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [38274]
