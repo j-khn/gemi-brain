@@ -20,7 +20,7 @@ jobs:
         with:
           python-version: "3.11"
         env:
-          AGENT_TOOLSDIRECTORY: ${{ github.workspace }}/.github/runner-toolcache
+          AGENT_TOOLSDIRECTORY: /Users/test/actions-toolcache
 
       - name: Install dependencies and run tests
         run: |
