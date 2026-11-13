@@ -1,6 +1,6 @@
 # 🤖 Gemi Brain
 
-**Gemi Brain** is the Python AI backend for **Gemi** — a cute, curious, and energetic pet robot designed to play with and entertain kids. It runs on macOS, uses a local [Ollama](https://ollama.com/) instance for AI responses, and SQLite for persistent memory.
+**Gemi Brain** is the Python AI backend, that can be used for a pet robot designed to play at home. You can use to as a brain of you robot using exposed apis. It runs on macOS, uses a local [Ollama](https://ollama.com/) instance for AI responses, and SQLite for persistent memory.
 
 ---
 
